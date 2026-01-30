@@ -1,0 +1,64 @@
+# Zaikaku - 工場材料照合アプリ
+
+Flutterで開発する工場内材料照合アプリケーション。バーコードスキャンによる材料照合、音声フィードバック、ログ記録・送信機能を提供します。
+
+## プロジェクト概要
+
+- **目的**: 工場製造ラインでの材料ピッキング照合
+- **プラットフォーム**: Android (将来的にiOS対応予定)
+- **技術スタック**: Flutter, Riverpod, Drift, mobile_scanner
+
+## 主要機能
+
+- バーコードスキャンによる材料照合
+- 正解/不正解の音声フィードバック
+- 材料ピッキングログの記録 (日付付き)
+- ログのメール送信機能
+
+## 開発状況
+
+### フェーズ1: セットアップと基盤構築 ✅ (完了)
+- Flutterプロジェクト初期化
+- 依存関係と状態管理 (Riverpod) のセットアップ
+- Clean Architecture フォルダ構成
+- ビルド・起動確認完了
+
+### フェーズ2: コアロジックとスキャン機能 (予定)
+- バーコードスキャン画面実装
+- 照合ロジック実装
+- 音声フィードバック実装
+
+## 開発環境
+
+- Flutter SDK: 3.x
+- Dart SDK: 3.10.4+
+- Android SDK: API 34
+- JDK: 21 (Gradle互換性のため)
+
+## ビルド方法
+
+```bash
+# 依存関係のインストール
+flutter pub get
+
+# デバッグビルド
+flutter build apk --debug
+
+# エミュレータで実行
+flutter run -d <device-id>
+```
+
+## ドキュメント
+
+- [開発ポリシー](docs/LLM_DEVELOPMENT_POLICY.md)
+- [タスク管理](docs/Task.md)
+- [実装計画](docs/implementation_plan.md)
+- [開発ウォークスルー](docs/Walkthrough.md)
+
+## ライセンス
+
+Private Project
+
+---
+
+最終更新: 2026-01-30 (Phase 1 完了)
