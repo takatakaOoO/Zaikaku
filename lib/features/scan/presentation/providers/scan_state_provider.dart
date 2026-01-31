@@ -18,6 +18,9 @@ class ScanState {
   /// スキャン中かどうか
   final bool isScanning;
   
+  /// 確認待機中かどうか（trueの場合、次のスキャンをブロック）
+  final bool isPendingConfirmation;
+  
   /// エラーメッセージ
   final String? errorMessage;
 
@@ -26,6 +29,7 @@ class ScanState {
     this.scanHistory = const [],
     this.latestResult,
     this.isScanning = true,
+    this.isPendingConfirmation = false,
     this.errorMessage,
   });
 
@@ -35,6 +39,7 @@ class ScanState {
     List<VerificationResult>? scanHistory,
     VerificationResult? latestResult,
     bool? isScanning,
+    bool? isPendingConfirmation,
     String? errorMessage,
     bool clearActiveProduct = false,
     bool clearLatestResult = false,
@@ -45,6 +50,7 @@ class ScanState {
       scanHistory: scanHistory ?? this.scanHistory,
       latestResult: clearLatestResult ? null : (latestResult ?? this.latestResult),
       isScanning: isScanning ?? this.isScanning,
+      isPendingConfirmation: isPendingConfirmation ?? this.isPendingConfirmation,
       errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
     );
   }
@@ -133,6 +139,7 @@ class ScanNotifier extends Notifier<ScanState> {
     state = state.copyWith(
       latestResult: result,
       scanHistory: [...state.scanHistory, result],
+      isPendingConfirmation: true, // 待機モードを有効化
     );
 
     // データベースに保存
@@ -161,12 +168,21 @@ class ScanNotifier extends Notifier<ScanState> {
     state = state.copyWith(
       clearLatestResult: true,
       scanHistory: [],
+      isPendingConfirmation: false,
     );
   }
 
   /// スキャン状態を切り替え
   void setScanning(bool isScanning) {
     state = state.copyWith(isScanning: isScanning);
+  }
+
+  /// 結果を確認し、待機モードを解除（次のスキャンを許可）
+  void confirmResult() {
+    state = state.copyWith(
+      isPendingConfirmation: false,
+      clearLatestResult: true, // 結果表示もクリア
+    );
   }
 
   /// エラーを設定

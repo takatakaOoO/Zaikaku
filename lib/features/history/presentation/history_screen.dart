@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 import 'providers/history_provider.dart';
 import '../../../domain/models/scan_history_entry.dart';
+import '../domain/use_cases/export_history_use_case.dart';
 
 /// スキャン履歴画面
 class HistoryScreen extends ConsumerWidget {
@@ -16,6 +18,17 @@ class HistoryScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('スキャン履歴'),
         actions: [
+          // CSVエクスポートボタン
+          historyAsync.maybeWhen(
+            data: (history) => history.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.share),
+                    onPressed: () => _exportToCsv(context, history),
+                    tooltip: 'CSVで共有',
+                  )
+                : const SizedBox.shrink(),
+            orElse: () => const SizedBox.shrink(),
+          ),
           IconButton(
             icon: const Icon(Icons.delete_sweep),
             onPressed: () => _showClearDialog(context, ref),
@@ -97,7 +110,7 @@ class HistoryScreen extends ConsumerWidget {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: iconColor.withOpacity(0.1),
+            color: iconColor.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: iconColor, size: 28),
@@ -173,6 +186,28 @@ class HistoryScreen extends ConsumerWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('履歴を消去しました')),
+        );
+      }
+    }
+  }
+
+  /// CSVファイルとしてエクスポートし、共有シートを表示
+  Future<void> _exportToCsv(BuildContext context, List<ScanHistoryEntry> history) async {
+    try {
+      final useCase = ExportHistoryUseCase();
+      final file = await useCase.saveToTempFile(history);
+
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [XFile(file.path)],
+          subject: 'スキャン履歴データ',
+          text: 'Zaikaku スキャン履歴 (${history.length}件)',
+        ),
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('エクスポートに失敗しました: $e')),
         );
       }
     }
