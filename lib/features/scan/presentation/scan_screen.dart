@@ -11,6 +11,7 @@ import '../../../core/utils/barcode_validator.dart';
 import '../../product/presentation/providers/product_provider.dart';
 import 'providers/scan_state_provider.dart';
 import 'providers/scan_settings_provider.dart';
+import '../../../core/ads/banner_ad_widget.dart';
 
 /// バーコードスキャン画面
 ///
@@ -199,6 +200,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
 
     return Scaffold(
       backgroundColor: Colors.black,
+      bottomNavigationBar: const BannerAdWidget(),
       body: Stack(
         children: [
           // 1. カメラ

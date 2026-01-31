@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import 'providers/history_provider.dart';
 import '../../../domain/models/scan_history_entry.dart';
 import '../domain/use_cases/export_history_use_case.dart';
+import '../../../core/ads/banner_ad_widget.dart';
 
 /// スキャン履歴画面
 class HistoryScreen extends ConsumerWidget {
@@ -41,25 +42,32 @@ class HistoryScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: historyAsync.when(
-        data: (history) => history.isEmpty
-            ? _buildEmptyState()
-            : _buildHistoryList(history, ref),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 48, color: Colors.red),
-              const SizedBox(height: 16),
-              Text('エラーが発生しました: $err'),
-              ElevatedButton(
-                onPressed: () => ref.read(historyProvider.notifier).refresh(),
-                child: const Text('再試行'),
+      body: Column(
+        children: [
+          Expanded(
+            child: historyAsync.when(
+              data: (history) => history.isEmpty
+                  ? _buildEmptyState()
+                  : _buildHistoryList(history, ref),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                    const SizedBox(height: 16),
+                    Text('エラーが発生しました: $err'),
+                    ElevatedButton(
+                      onPressed: () => ref.read(historyProvider.notifier).refresh(),
+                      child: const Text('再試行'),
+                    ),
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
-        ),
+          const BannerAdWidget(),
+        ],
       ),
     );
   }

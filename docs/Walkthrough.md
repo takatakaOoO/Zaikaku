@@ -368,7 +368,7 @@
 │   │           ├── scan_screen.dart [MOD] (UI全面刷新)
 │   │           └── providers/
 │   │               └── scan_state_provider.dart [MOD] (待機状態、クリアロジック追加)
-└── pubspec.yaml [MOD] (csv, share_plus, path_provider追加)
+│   └── pubspec.yaml [MOD] (csv, share_plus, path_provider追加)
 ```
 
 ### 主要作業内容
@@ -381,3 +381,23 @@
   - **UI/UX**: ボタンの配置、リストの挙動、エラー時の赤枠表示など、全てのユーザー要望項目が満たされていることを確認。
   - **エクスポート**: エミュレータ上でダミーのCSVが生成され、共有シートが開くことを確認。
   - **スキャンフロー**: 読み取り -> 判定 -> 確認 -> クリア のサイクルが正常に機能することを確認。
+
+---
+
+## Phase 6: リリース準備とAdMob実装 [実施中]
+- [x] 計画策定 (2026-02-01)
+- [x] Google AdMob導入
+- [x] アプリアイコンの適用
+- [x] READMEの更新
+- [ ] リリースビルド生成 (検証中)
+
+### 変更履歴
+- **2026-02-01**: Phase 6 実装計画を策定。Google AdMobの追加要件を反映。
+- **2026-02-01**: Google AdMob (`google_mobile_ads`) を導入。
+    - `AdHelper`クラスを作成し、OSごとのテストIDを管理。
+    - `BannerAdWidget`を作成し、`HistoryScreen`, `ScanScreen` (BottomNavigationBar), `HomeScreen` に配置。
+- **2026-02-01**: アプリアイコンを生成し、`flutter_launcher_icons` で適用。`AndroidManifest.xml` のアプリ名を "材確" (漢字) に修正。
+- **2026-02-01**: ホーム画面のUIを調整。アプリアイコンの表示サイズを 120x120 に戻しつつ、実際のランチャーアイコン画像を表示するよう変更。
+- **2026-02-01**: アプリアイコンを以前のバランスの良いバージョン（角丸・透過あり）をベースに、デザインを最大化（余白ゼロ）した画像に更新。
+- **2026-02-01**: Androidのアダプティブアイコン設定（前景：アイコン、背景：透明）を適用し、OS上での視認性を最大化しつつ角の透過を実現。
+

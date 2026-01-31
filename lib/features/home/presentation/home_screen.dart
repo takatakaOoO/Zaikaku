@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/ads/banner_ad_widget.dart';
 
 /// ホーム画面
 /// 
@@ -16,6 +17,7 @@ class HomeScreen extends ConsumerWidget {
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.primaryContainer,
       ),
+      bottomNavigationBar: const BannerAdWidget(),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -38,20 +40,22 @@ class HomeScreen extends ConsumerWidget {
                   width: 120,
                   height: 120,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 15,
+                        offset: const Offset(0, 8),
                       ),
                     ],
                   ),
-                  child: Icon(
-                    Icons.qr_code_scanner,
-                    size: 64,
-                    color: Theme.of(context).colorScheme.onPrimary,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Image.asset(
+                      'assets/icon/icon.png',
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 32),

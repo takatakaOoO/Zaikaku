@@ -7,7 +7,12 @@ import 'features/scan/presentation/settings_screen.dart';
 import 'features/history/presentation/history_screen.dart';
 import 'features/product/presentation/product_list_screen.dart';
 
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  MobileAds.instance.initialize();
+
   runApp(
     const ProviderScope(
       child: MyApp(),
