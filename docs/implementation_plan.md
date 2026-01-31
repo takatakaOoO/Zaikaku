@@ -1,41 +1,140 @@
-# 実装計画書 - Zaikaku Project [承認済]
+# 実装計画書 - Phase 2: コアロジックとスキャン機能 [承認済]
 
-## 目標
-工場内材料照合アプリ「Zaikaku」のAndroid版（将来的にiPhone対応）を **Flutter** を用いて開発する。
-バーコード読み取りによる材料照合、合否の音声通知、ログの記録・送信機能を実装する。
+## 変更履歴
+- 2026-01-30: 初版作成 (Phase 2 基本機能) [承認済]
+- 2026-01-31: 1D/2D詳細制御・バリデーション機能の追加 [承認済]
+- 2026-01-31: デバッグ用画像選択機能の追加計画 [NEW]
 
-## User Review Required
-特にありませんが、UIデザインの方向性（「グラフィカルで機敏」）について、初期プロトタイプ段階で確認いただきたいです。
+---
 
-## Proposed Changes
+## 2026-01-31 追加計画: スキャン機能の高度化（1D/2Dフィルタリング・ROI・バリデーション）
 
-### 技術スタック
-- **Framework**: Flutter
-- **Language**: Dart
-- **State Management**: flutter_riverpod (状態管理とDI)
-- **Barcode Scanning**: mobile_scanner (高速で使いやすい)
-- **Audio**: audioplayers (効果音再生)
-- **Database**: drift (SQLiteのラッパー、安全なDB操作) または sqflite
-- **Settings**: shared_preferences (メールアドレス等の設定)
-- **Design System**: Material 3
+### 目標 (追加分)
+1. **1D/2Dバーコードの高度な制御**: 種類別の制限、読み取り範囲(ROI)の制御、複数読み取りの選択。
+2. **1Dバーコードのバリデーション**: チェックデジット、パリティ、スタート/ストップキャラクタの検証。
+3. **設定機能**: 上記のスキャン挙動をユーザーが切り替えられる設定画面の導入。
+4. **デバッグ機能**: エミュレータのカメラ不調を回避するため、画像ファイルを直接選択してスキャンする機能。
 
-### Core Implementation Steps (Phase 1 & 2)
+### User Review Required (追加分)
+> [!IMPORTANT]
+> **スキャンモードの選択**
+> - 1Dバーコードが複数並んでいる場合、「全範囲で複数読み取り」か「中央の狭い範囲に限定して1つずつ読み取り」かを選択できるようにします。
+> - デフォルトは「自動判別」ですが、精度や速度に影響が出る場合に備え、1D専用・2D専用モードを切り替え可能にします。
 
-#### [NEW] [Flutter Project Config](file:///C:/Users/d-2/OriginalCode/Zaikaku/pubspec.yaml)
-- `flutter create` でプロジェクトを初期化
-- 依存パッケージの追加: `flutter_riverpod`, `mobile_scanner`, `audioplayers`, `intl`, `path_provider`, `share_plus`
+> [!WARNING]
+> **バリデーションの有効範囲**
+> - チェックデジット等の検証は、バーコードの規格（JAN, ITF, Code128等）ごとに実装が必要になるため、主要な規格から順次対応します。
 
-#### [NEW] [Main Screen Structure](file:///C:/Users/d-2/OriginalCode/Zaikaku/lib/main.dart)
-- `MaterialApp` with Material 3 theme.
-- Navigation setup using `go_router` or basic Navigator.
+### Proposed Changes (追加分)
 
-## Verification Plan
+#### ステップ7: スキャン設定モデルとプロバイダーの実装
+- `ScanSettings` モデルの作成
+  - `barcodeTypes` (Enum: auto, only1D, only2D)
+  - `scanMode` (Enum: singleNarrow, multiFull)
+  - `validationSettings` (EnableCheckDigit, EnableParity, etc.)
+- `ScanSettingsProvider` の作成 (Persistenceを考慮)
 
-### Automated Tests
-- `flutter test` を用いた単体テスト（ロジック部分）
+#### ステップ8: 1Dバーコード・バリデーターの実装
+- `BarcodeValidator` ユーティリティの作成
+  - チェックデジット計算ロジック
+  - パリティ、スタート/ストップキャラクタ検証
+  - 各検証の有効/無効切り替え対応
 
-### Manual Verification
-1. **ビルド検証**: `flutter build apk` でAndroidアプリが正しくビルドされること。
-2. **エミュレータ検証**: Android Studioのエミュレータでアプリが起動し、クラッシュしないこと。
-3. **UI動作確認**: 画面遷移やアニメーションがスムーズであること。
-4. **実機検証**: 実機にてカメラ権限の取得とバーコードスキャン動作を確認する。
+#### ステップ9: スキャン画面の機能拡張 (ScanScreen)
+- `MobileScannerController` への設定反映
+  - `formats` フィルタリング
+  - `scanWindow` (ROI) の適用
+- UIの拡張
+  - ナローモード時のターゲット枠表示
+  - 設定画面への遷移ボタン追加
+
+#### ステップ11: デバッグ用画像選択機能の実装
+- `image_picker` の導入
+- AppBarへの「選択」アイコン追加
+- 選択画像を `mobile_scanner` プロセッサに渡さず、直接ML Kitの解析ロジック（またはエミュレートロジック）へブリッジする実装
+
+### Verification Plan (追加分)
+- **ユニットテスト**: 各バーコード規格に対するバリデーションロジックの正当正試験
+- **手動検証**:
+  1. 設定画面からの1D/2D切替とフィルタリング動作。
+  2. ナローモード時のROI（枠内限定）読み取り動作。
+  3. バリデーションエラー時の動作（警告表示等）。
+  4. **追加**: 外部画像ファイル選択によるスキャン成功の確認。
+
+#### 読み取りテスト用ケース (指定)
+以下の10ケースのテストデータを準備し、検証を行います。
+1. 2Dコード1個のみ
+2. 2Dコードが接近した位置に複数ある
+3. 2Dコードと1Dコードが接近した位置にある
+4. 1Dコードが1個のみ
+5. 1Dコードが縦に接近した位置に複数ある
+6. 1Dコードが1個でチェックデジットが間違っている
+7. 1Dコードでパリティチェックコードが間違っている
+8. 1Dコードでスタートキャラクタが欠落している
+9. 1Dコードでストップキャラクタが欠落している
+10. 1Dコードでスタートキャラクタとストップキャラクタ両方が欠落している
+
+---
+
+## 2026-01-30 承認済み計画: 基本機能実装
+
+### 目標
+Phase 2では、Zaikakuアプリの中核機能である**バーコードスキャン**、**照合ロジック**、**音声フィードバック**を実装します。
+ユーザーがバーコードをスキャンし、製造指示書と照合して正解/不正解の音声フィードバックを受け取れるようにします。
+
+### User Review Required
+> [!IMPORTANT]
+> **照合ロジックのデータ構造について**
+> - 現時点では、製造指示書データは**ハードコードされたモックデータ**として実装します
+> - 実際の運用では、CSVファイルやAPIからデータを取得する必要がありますが、Phase 2ではスキャン機能の動作確認を優先します
+> - データ取得方法については、Phase 3以降で実装予定です
+
+> [!WARNING]
+> **カメラ権限の設定**
+> - AndroidManifest.xmlにカメラ権限を追加します
+> - エミュレータではカメラ機能が制限されるため、実機テストが必要になる可能性があります
+
+### Proposed Changes
+
+#### ステップ1: データモデルとドメイン層の実装
+- 製造指示書モデル: `ManufacturingOrder`
+- 材料モデル: `Material`
+- 照合結果モデル: `VerificationResult`
+- 照合ロジック: `VerifyMaterialUseCase`
+
+#### ステップ2: 音声フィードバック機能の実装
+- 音声アセット準備: `correct.mp3`, `incorrect.mp3`
+- 音声サービス: `AudioService`
+- 音声サービスProvider: `audioServiceProvider`
+
+#### ステップ3: バーコードスキャン画面の実装
+- スキャン画面UI: `ScanScreen`
+- スキャン状態管理: `ScanState`
+- スキャンコントローラー: `ScanNotifier`
+
+#### ステップ4: ルーティングと画面遷移の実装
+- `main.dart` の更新 (HomeScreenへの遷移)
+- ホーム画面: `HomeScreen`
+
+#### ステップ5: Android権限設定
+- `AndroidManifest.xml` (CAMERA権限)
+
+#### ステップ6: モックデータの準備
+- モックデータリポジトリ: `MockOrderRepository`
+
+### Verification Plan (基本機能)
+- ユニットテスト: 照合ロジック
+- 手動検証: エミュレータでの画面遷移、実機でのバーコードスキャン、音声フィードバック。
+
+#### 検証合格基準
+- ✅ ビルドが成功すること
+- ✅ エミュレータでアプリが起動し、画面遷移が正常に動作すること
+- ✅ 実機でバーコードスキャンが正常に動作すること
+- ✅ 照合ロジックが正しく動作すること (正解/不正解の判定)
+- ✅ 音声フィードバックが正常に再生されること
+- ✅ ユーザーが「動作確認合格」と報告すること
+
+### 実装の進め方
+1. ステップ1-6を順次実施。
+2. 各ステップで動作確認。
+3. 最終的に実機テストを実施。
