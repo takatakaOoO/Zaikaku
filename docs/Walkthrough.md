@@ -384,12 +384,12 @@
 
 ---
 
-## Phase 6: リリース準備とAdMob実装 [実施中]
+## Phase 6: リリース準備とAdMob実装 [完了]
 - [x] 計画策定 (2026-02-01)
 - [x] Google AdMob導入
 - [x] アプリアイコンの適用
 - [x] READMEの更新
-- [ ] リリースビルド生成 (検証中)
+- [x] リリースビルド生成 (Phase 7へ移行)
 
 ### 変更履歴
 - **2026-02-01**: Phase 6 実装計画を策定。Google AdMobの追加要件を反映。
@@ -400,4 +400,108 @@
 - **2026-02-01**: ホーム画面のUIを調整。アプリアイコンの表示サイズを 120x120 に戻しつつ、実際のランチャーアイコン画像を表示するよう変更。
 - **2026-02-01**: アプリアイコンを以前のバランスの良いバージョン（角丸・透過あり）をベースに、デザインを最大化（余白ゼロ）した画像に更新。
 - **2026-02-01**: Androidのアダプティブアイコン設定（前景：アイコン、背景：透明）を適用し、OS上での視認性を最大化しつつ角の透過を実現。
+
+### 実装機能
+- **広告収益化**: Google AdMob バナー広告をアプリの主要な画面（ホーム、スキャン、履歴）の下部に配置。
+- **ブランディング**:
+    - アプリ名を「材確」（読み：ザイカク）に変更。
+    - アプリアイコンを刷新。OSのホーム画面で最大限大きく表示されるよう、余白を排除したフルブリードデザインかつ透過対応のアダプティブアイコンを適用。
+- **リリース準備**:
+    - `Task.md`, `README.md` を最新化。
+    - 次フェーズ（ストア公開）に向けたガイドライン（`STORE_REGISTRATION_GUIDE.md`）と計画書（`implementation_plan_phase7.md`）を策定。
+
+### 追加・修正されたファイル
+```
+/
+├── android/
+│   ├── app/
+│   │   └── src/main/AndroidManifest.xml [MOD] (アプリ名変更, AdMob ID追加)
+├── assets/
+│   └── icon/
+│       └── icon.png [NEW] (アプリアイコン)
+├── docs/
+│   ├── implementation_plan_phase7.md [NEW] (Phase 7計画)
+│   ├── STORE_REGISTRATION_GUIDE.md [NEW] (ストア登録ガイド)
+│   ├── Task.md [MOD] (Phase 7, 8追加)
+│   └── README.md [MOD] (Phase 6完了反映)
+├── lib/
+│   ├── core/
+│   │   └── ads/
+│   │       ├── ad_helper.dart [NEW] (広告ID管理)
+│   │       └── banner_ad_widget.dart [NEW] (バナー広告ウィジェット)
+│   ├── features/
+│   │   ├── history/
+│   │   │   └── presentation/
+│   │   │       └── history_screen.dart [MOD] (広告配置)
+│   │   ├── home/
+│   │   │   └── presentation/
+│   │   │       └── home_screen.dart [MOD] (広告配置, UI調整)
+│   │   └── scan/
+│   │       └── presentation/
+│   │           └── scan_screen.dart [MOD] (広告配置)
+│   └── main.dart [MOD] (AdMob初期化)
+└── pubspec.yaml [MOD] (google_mobile_ads, flutter_launcher_icons追加)
+```
+
+### 主要作業内容
+1.  **収益化基盤構築**: AdMobパッケージの導入とヘルパークラスの実装。
+2.  **UI統合**: 既存の画面レイアウトを崩さずにバナー広告を配置。
+3.  **アプリアイコン完成**: 視認性とデザイン性を両立させたアダプティブアイコンの生成と適用。
+4.  **ドキュメント整備**: 開発ポリシー準拠のため、次フェーズの計画と手順を正式なドキュメントフォルダに集約。
+
+### 検証結果
+- **2026-02-01**: 動作確認完了 (**SUCCESS**)
+    - **広告**: テストバナーが各画面で表示され、ログにロード成功が記録されることを確認。
+    - **アイコン**: エミュレータのランチャー画面で、アイコンが大きく、かつ角が綺麗に透過されていることを確認。
+    - **アプリ名**: ランチャーおよび設定画面で「材確」と表示されることを確認。
+
+---
+
+### Phase 7: ストア公開準備と製品化設定 [完了]
+- [x] 実装計画策定 (2026-02-01)
+- [x] 法的ドキュメント作成 (Manual, Privacy Policy)
+- [x] 法的情報メニューの実装
+- [x] リリース署名設定 (key.properties, build.gradle)
+- [x] 公開リポジトリ向けセキュリティ対策 (AdMob ID等の非表示化)
+- [x] リリースビルド (AAB) 生成 (2026-02-01)
+
+### 変更履歴
+- **2026-02-01**: `USER_MANUAL.md`, `PRIVACY_POLICY.md` を作成。アプリ内表示用のテキスト定数 (`AppDocs`) も実装。
+- **2026-02-01**: `HomeScreen` にメニューを追加し、取扱説明書・プライバシーポリシーの表示ダイアログおよびライセンス表示 (`showLicensePage`) を実装。
+- **2026-02-01**: リリースビルド用の署名設定を `build.gradle.kts` に追加。`key.properties` (Git除外) を用いた安全な署名・AdMob App ID管理を実装。
+- **2026-02-01**: `AdHelper` を修正し、`--dart-define` によるビルド時定数注入に対応。コード内からの本番用IDハードコードを排除。
+- **2026-02-01**: 署名鍵 (JKS) を生成。
+- **2026-02-01**: `proguard-rules.pro` を作成し、Google ML Kit および Play Core ライブラリに関連する R8 難読化エラーを解消。
+- **2026-02-01**: Git履歴を整理し、誤ってコミットされた秘匿情報を完全に削除。
+
+### 追加・修正されたファイル
+```
+/
+├── android/
+│   ├── app/
+│   │   ├── build.gradle.kts [MOD] (署名設定 & AdMob ID注入)
+│   │   ├── proguard-rules.pro [NEW] (難読化ルール)
+│   │   └── src/main/AndroidManifest.xml [MOD] (AdMob IDの変数化)
+│   └── key.properties [NEW] (署名鍵・秘匿ID設定: Git除外)
+├── docs/
+│   ├── PRIVACY_POLICY.md [NEW]
+│   └── USER_MANUAL.md [NEW]
+├── lib/
+│   ├── core/
+│   │   ├── ads/
+│   │   │   └── ad_helper.dart [MOD] (環境変数によるID注入)
+│   │   └── constants/
+│   │       └── app_docs.dart [NEW] (アプリ内表示用ドキュメントテキスト)
+│   └── features/
+│       └── home/
+│           └── presentation/
+│               └── home_screen.dart [MOD] (法的情報メニュー追加)
+└── test/
+    └── widget_test.dart [DELETE] (不要なデフォルトテスト削除)
+```
+
+### 検証結果
+- **2026-02-01**: ビルド検証完了 (**SUCCESS**)
+  - `flutter build appbundle --release --dart-define=ADMOB_BANNER_ID_ANDROID=...` が成功。
+  - 秘匿情報がソースコード上から排除され、Git追跡対象外となっていることを確認。
 

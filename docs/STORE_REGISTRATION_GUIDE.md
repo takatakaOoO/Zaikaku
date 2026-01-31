@@ -6,8 +6,10 @@
 3. 「広告ユニット」から「バナー」を作成し、以下のIDを控える：
    - **App ID**: `ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX`
    - **広告ユニットID**: `ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX`
-4. アプリ内の `lib/core/ads/ad_helper.dart` に本番IDを記述。
-5. `AndroidManifest.xml` の `com.google.android.gms.ads.APPLICATION_ID` を本番用App IDに差し替え。
+4. **AndroidManifest用設定**: `android/key.properties` に `admobAppId=あなたのAppID` を追記します（このファイルはGit管理外です）。
+5. **コード用設定**: ビルド時に `--dart-define=ADMOB_BANNER_ID_ANDROID=あなたのユニットID` を付与してビルドします。
+   - `lib/core/ads/ad_helper.dart` がこの環境変数を自動で読み込みます。
+
 
 ## 2. リリース用署名 (Keystore) の作成
 1. ターミナルで署名鍵を生成：

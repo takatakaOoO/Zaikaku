@@ -1,66 +1,45 @@
-# 実装計画書 - Phase 6: リリース準備とAdMob実装
+# 実装計画書 - Phase 8: ストア審査と公開
+
+Phase 7で作成したリリースビルド (AAB) を用いて、Google Play Console上での登録・審査・公開作業を行います。
+本フェーズはアプリ開発（コーディング）ではなく、運用・登録作業が中心となります。
 
 ## 目標
-アプリの正式リリースに向けた仕上げ（アイコン、ドキュメント、ビルド）に加え、収益化のための **Google AdMob広告** を実装します。その後、リリース用ビルド（APK/AAB）を生成し、実機での最終動作確認を行います。
+Google Play Storeに「材確」アプリを公開し、エンドユーザーがダウンロード可能な状態にすること。
 
 ## User Review Required
 > [!IMPORTANT]
-> **AdMob App IDについて**:
-> 実装およびテスト段階では **Google提供のテスト用App ID** を使用します。
-> リリース時にはご自身のAdMob App IDへの差し替えが必要となります。
-> *   Test App ID (Android): `ca-app-pub-3940256099942544~3347511713`
+> **ストア審査について**:
+> Google Playの審査には数日〜数週間かかる場合があります。
+> また、初回リリース時には身分証明書の提出や、20人のテスターによるクローズドテスト（個人開発者の場合）が要求されることがあります。
 
-> [!IMPORTANT]
-> **アプリアイコンについて**:
-> `flutter_launcher_icons` による自動生成を行います。`assets/icon/icon.png` (1024x1024) が必要です。
+## Detailed Steps
 
-## Proposed Changes
+### 1. Google Play Console 登録作業
+- [ ] **アプリ作成**: タイトル、デフォルト言語、アプリの種類（無料）を設定。
+- [ ] **ストアの掲載情報**:
+    - アプリ名: 「材確 - 現場向け材料照合アプリ」
+    - 簡単な説明: 「製造現場の誤作業防止。バーコードで材料を瞬時に照合。」
+    - 詳しい説明: 機能詳細、使い方などを記述。
+    - スクリーンショット: スマホ各種サイズ（ユーザー様にて準備済みの想定）。
+    - アイコン: 512x512px (Phase 6で作成した高解像度アイコンを使用)。
+- [ ] **コンテンツの設定**:
+    - プライバシーポリシーURL: (自社サイト or GitHub Pages等のURL)
+    - 広告を含む: 「はい」
+    - アプリのアクセス権: 「ロケーションなど特別な権限なし」（カメラ権限は機能の一部として申告）
+    - 対象年齢: 全年齢（3歳以上、など適切な区分を選択）
 
-### 1. Google AdMobの導入
-`google_mobile_ads` パッケージを導入し、バナー広告を表示します。
+### 2. リリースアップロード
+- [ ] **トラック選択**: まずは「内部テスト」または「製品版（プロダクション）」を選択。
+    - ※個人アカウントの場合、現在は「クローズドテスト」が必須要件となっているケースが多いです要確認。
+- [ ] **AABアップロード**: `build/app/outputs/bundle/release/app-release.aab` をドラッグ＆ドロップ。
+- [ ] **リリースノート**: 「初回リリース」等の記述。
 
-#### [MODIFY] [pubspec.yaml](file:///c:/Users/d-2/OriginalCode/Zaikaku/pubspec.yaml)
-- `dependencies` に `google_mobile_ads` を追加。
-
-#### [MODIFY] [android/app/src/main/AndroidManifest.xml](file:///c:/Users/d-2/OriginalCode/Zaikaku/android/app/src/main/AndroidManifest.xml)
-- `<meta-data>` タグで AdMob App ID (テスト用) を追加。
-
-#### [NEW] `lib/core/ads/ad_helper.dart` (仮)
-- 広告ID（バナー用テストID）を管理するヘルパークラス。
-
-#### [NEW] `lib/core/ads/banner_ad_widget.dart`
-- 汎用的なバナー広告ウィジェットを作成。
-
-#### [MODIFY] `lib/features/scan/presentation/scan_screen.dart` / `lib/features/history/presentation/history_screen.dart`
-- 画面下部などに `BannerAdWidget` を配置。
-- **注意**: スキャン画面はカメラオーバーレイがあるため、UIの干渉を避ける配置（例: 材料リストの下、またはオーバーレイの一部として配置）を検討します。まずは履歴画面やホーム画面などで検証します。
-
-### 2. アプリアイコンの設定
-`flutter_launcher_icons` パッケージでアイコンを生成します。
-
-#### [MODIFY] [pubspec.yaml](file:///c:/Users/d-2/OriginalCode/Zaikaku/pubspec.yaml)
-- `dev_dependencies` に `flutter_launcher_icons` を追加。
-- 設定セクションを追加。
-
-### 3. ドキュメント整備とリリースビルド
-
-#### [MODIFY] [README.md](file:///c:/Users/d-2/OriginalCode/Zaikaku/README.md)
-- 機能一覧更新（AdMob追加）。
-- スクリーンショット更新。
-
-#### [MODIFY] [android/app/build.gradle.kts](file:///c:/Users/d-2/OriginalCode/Zaikaku/android/app/build.gradle.kts)
-- バージョンコード更新。
+### 3. 審査提出と公開
+- [ ] **審査へ送信**: 全てのエラーが解消されたら審査へ提出。
+- [ ] **公開**: 審査通過後、「公開」ボタンを押してストアに反映。
 
 ## Verification Plan
 
-### Automated Tests
-- `flutter test`: 既存テストの通過確認。
-
 ### Manual Verification
-1. **広告表示確認**:
-    - アプリ起動後、指定した画面（履歴画面等）の下部に「Test Ad」と書かれたバナーが表示されることを確認。
-    - コンソールログに `ad_loaded` 等の成功ログが出ることを確認。
-2. **スキャン画面UI確認**:
-    - 広告表示がスキャン操作やボタン（シャッター等）と被らないことを確認。
-3. **アイコン・リリース確認**:
-    - 前回の計画通り、アイコン変更とリリースビルドのインストール確認。
+- **ストア表示確認**: 公開後、Google Play Storeでアプリを検索し、説明文や画像が正しく表示されているか確認。
+- **インストールテスト**: ストアからインストールし、正常に起動・動作することを確認。

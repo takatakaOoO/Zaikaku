@@ -2,12 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/ads/banner_ad_widget.dart';
+import '../../../core/constants/app_docs.dart';
 
 /// ホーム画面
 /// 
 /// アプリのメイン画面。スキャン機能への導線を提供します。
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
+
+  void _showDoc(BuildContext context, String title, String content) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: SingleChildScrollView(
+          child: Text(content),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('閉じる'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -16,6 +35,53 @@ class HomeScreen extends ConsumerWidget {
         title: const Text('材確 (Zaikaku)'),
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              switch (value) {
+                case 'manual':
+                  _showDoc(context, '取扱説明書', AppDocs.userManual);
+                  break;
+                case 'privacy':
+                  _showDoc(context, 'プライバシーポリシー', AppDocs.privacyPolicy);
+                  break;
+                case 'license':
+                  showLicensePage(
+                    context: context,
+                    applicationName: '材確 (Zaikaku)',
+                    applicationLegalese: '© 2026 Zaikaku Project',
+                  );
+                  break;
+              }
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'manual',
+                child: ListTile(
+                  leading: Icon(Icons.menu_book),
+                  title: Text('取扱説明書'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'privacy',
+                child: ListTile(
+                  leading: Icon(Icons.privacy_tip),
+                  title: Text('プライバシーポリシー'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'license',
+                child: ListTile(
+                  leading: Icon(Icons.info_outline),
+                  title: Text('ライセンス情報'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
       bottomNavigationBar: const BannerAdWidget(),
       body: Container(

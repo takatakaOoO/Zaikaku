@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -28,13 +31,41 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Load AdMob App ID from key.properties
+        val keystoreFile = project.rootProject.file("key.properties")
+        val properties = Properties()
+        var appId = "ca-app-pub-3940256099942544~3347511713" // Default Test ID
+        if (keystoreFile.exists()) {
+            properties.load(FileInputStream(keystoreFile))
+            appId = properties.getProperty("admobAppId") ?: appId
+        }
+        manifestPlaceholders["admobAppId"] = appId
+    }
+
+    signingConfigs {
+        create("release") {
+            val keystoreFile = project.rootProject.file("key.properties")
+            if (keystoreFile.exists()) {
+                val properties = Properties()
+                properties.load(FileInputStream(keystoreFile))
+                
+                val storePath = properties.getProperty("storeFile")
+                if (storePath != null) {
+                    storeFile = file(storePath)
+                    storePassword = properties.getProperty("storePassword")
+                    keyAlias = properties.getProperty("keyAlias")
+                    keyPassword = properties.getProperty("keyPassword")
+                }
+            }
+        }
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 }

@@ -55,6 +55,12 @@ Flutterで開発する工場内材料照合アプリケーション。バーコ�
 - アプリ名を「材確」に漢字化、UIの最終調整
 - リリース用構成の整備
 
+### フェーズ7: ストア公開準備と製品化設定 ✅ (完了)
+- 法的ドキュメント（取扱説明書、プライバシーポリシー）の作成・整備
+- 本番用Google AdMob IDの設定
+- リリース署名鍵 (Keystore) の生成とビルド設定
+- 正式リリースビルド (AAB) の生成とProGuard対応
+
 ## 開発環境
 
 - Flutter SDK: 3.x
@@ -71,8 +77,8 @@ flutter pub get
 # デバッグビルド
 flutter build apk --debug
 
-# エミュレータで実行
-flutter run -d <device-id>
+# リリースビルド (AAB)
+flutter build appbundle --release
 ```
 
 ## ドキュメント
@@ -81,6 +87,7 @@ flutter run -d <device-id>
 - [タスク管理](docs/Task.md)
 - [実装計画](docs/implementation_plan.md)
 - [開発ウォークスルー](docs/Walkthrough.md)
+- [取扱説明書](docs/USER_MANUAL.md)
 - [開発ログ](LLM_Agent_Logs/)
 
 ## ライセンス
@@ -89,4 +96,4 @@ Private Project
 
 ---
 
-最終更新: 2026-02-01 (Phase 6 完了)
+最終更新: 2026-02-01 (Phase 7 完了)
