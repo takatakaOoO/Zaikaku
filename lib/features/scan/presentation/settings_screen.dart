@@ -54,6 +54,15 @@ class SettingsScreen extends ConsumerWidget {
           ),
           
           const Divider(),
+          _buildSectionHeader(context, 'エクスポート設定'),
+          ListTile(
+            title: const Text('ログ送信先メールアドレス'),
+            subtitle: Text(settings.exportEmail.isEmpty ? '未設定' : settings.exportEmail),
+            trailing: const Icon(Icons.edit),
+            onTap: () => _showEmailDialog(context, notifier, settings.exportEmail),
+          ),
+          
+          const Divider(),
           _buildSectionHeader(context, 'その他'),
           ListTile(
             title: const Text('重複読み取りガード'),
@@ -123,6 +132,37 @@ class SettingsScreen extends ConsumerWidget {
           },
           child: Text(_getRangeModeName(v)),
         )).toList(),
+      ),
+    );
+  }
+
+  void _showEmailDialog(BuildContext context, ScanSettingsNotifier notifier, String current) {
+    final controller = TextEditingController(text: current);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('メールアドレス設定'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: '送信先メールアドレス',
+            hintText: 'example@domain.com',
+          ),
+          keyboardType: TextInputType.emailAddress,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('キャンセル'),
+          ),
+          TextButton(
+            onPressed: () {
+              notifier.updateExportEmail(controller.text.trim());
+              Navigator.pop(context);
+            },
+            child: const Text('保存'),
+          ),
+        ],
       ),
     );
   }

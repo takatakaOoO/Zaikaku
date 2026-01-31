@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:go_router/go_router.dart';
 import 'dart:io';
 import '../../../core/providers/audio_provider.dart';
 import '../../../data/repositories/mock_order_repository.dart';
@@ -185,11 +186,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.settings),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const SettingsScreen()),
-              );
-            },
+            onPressed: () => context.push('/settings'),
             tooltip: '設定',
           ),
           IconButton(
@@ -344,7 +341,6 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
     if (result != null && result.barcodes.isNotEmpty) {
       // 便宜上、最初の1つを処理
       final capture = BarcodeCapture(barcodes: result.barcodes);
-      debugPrint('--- Picked Image Scanned: ${result.barcodes.length} barcodes found ---');
       _onBarcodeDetected(capture);
     } else {
       if (mounted) {

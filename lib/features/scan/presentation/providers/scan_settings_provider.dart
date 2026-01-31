@@ -43,6 +43,9 @@ abstract class ScanSettings with _$ScanSettings {
 
     /// 連続スキャンの重複除外時間をミリ秒で指定 (0で無効)
     @Default(1000) int duplicateTimeoutMs,
+
+    /// ログのエクスポート先メールアドレス
+    @Default('') String exportEmail,
   }) = _ScanSettings;
 
   factory ScanSettings.fromJson(Map<String, dynamic> json) =>
@@ -85,5 +88,10 @@ class ScanSettingsNotifier extends _$ScanSettingsNotifier {
   /// 重複タイムアウトの更新
   void updateDuplicateTimeout(int ms) {
     state = state.copyWith(duplicateTimeoutMs: ms);
+  }
+
+  /// エクスポート先メールアドレスの更新
+  void updateExportEmail(String email) {
+    state = state.copyWith(exportEmail: email);
   }
 }

@@ -18,6 +18,7 @@ _ScanSettings _$ScanSettingsFromJson(Map<String, dynamic> json) =>
       enableParityCheck: json['enableParityCheck'] as bool? ?? true,
       enableStartStopCheck: json['enableStartStopCheck'] as bool? ?? true,
       duplicateTimeoutMs: (json['duplicateTimeoutMs'] as num?)?.toInt() ?? 1000,
+      exportEmail: json['exportEmail'] as String? ?? '',
     );
 
 Map<String, dynamic> _$ScanSettingsToJson(_ScanSettings instance) =>
@@ -28,6 +29,7 @@ Map<String, dynamic> _$ScanSettingsToJson(_ScanSettings instance) =>
       'enableParityCheck': instance.enableParityCheck,
       'enableStartStopCheck': instance.enableStartStopCheck,
       'duplicateTimeoutMs': instance.duplicateTimeoutMs,
+      'exportEmail': instance.exportEmail,
     };
 
 const _$BarcodeTypeFilterEnumMap = {
@@ -81,7 +83,7 @@ final class ScanSettingsNotifierProvider
 }
 
 String _$scanSettingsNotifierHash() =>
-    r'b0201d6fcead4d133a19a943e9541795aa61cfa4';
+    r'82493beadb5ccde731daef7309250efa0645c490';
 
 abstract class _$ScanSettingsNotifier extends $Notifier<ScanSettings> {
   ScanSettings build();

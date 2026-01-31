@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../scan/presentation/scan_screen.dart';
+import 'package:go_router/go_router.dart';
 
 /// ホーム画面
 /// 
@@ -78,13 +78,7 @@ class HomeScreen extends ConsumerWidget {
                   width: double.infinity,
                   height: 56,
                   child: FilledButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => ScanScreen(),
-                        ),
-                      );
-                    },
+                    onPressed: () => context.push('/scan'),
                     icon: const Icon(Icons.camera_alt),
                     label: const Text(
                       'スキャン開始',
@@ -94,19 +88,12 @@ class HomeScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 
-                // 履歴ボタン (将来実装)
+                // 履歴ボタン
                 SizedBox(
                   width: double.infinity,
                   height: 56,
                   child: OutlinedButton.icon(
-                    onPressed: () {
-                      // TODO: Phase 3で実装
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('履歴機能は今後実装予定です'),
-                        ),
-                      );
-                    },
+                    onPressed: () => context.push('/history'),
                     icon: const Icon(Icons.history),
                     label: const Text(
                       '履歴を見る',

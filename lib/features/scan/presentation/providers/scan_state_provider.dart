@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../domain/models/manufacturing_order.dart';
 import '../../../../domain/models/verification_result.dart';
+import '../../../../core/providers/repository_providers.dart';
 
 /// スキャン画面の状態
 class ScanState {
@@ -51,7 +52,11 @@ class ScanState {
 class ScanNotifier extends Notifier<ScanState> {
   @override
   ScanState build() {
-    return const ScanState();
+    // 開発・検証フェーズのため、初期状態でモック指示書をセットしておく
+    final mockRepo = ref.read(mockOrderRepositoryProvider);
+    return ScanState(
+      currentOrder: mockRepo.getCurrentOrder(),
+    );
   }
 
   /// 製造指示書を設定
@@ -75,6 +80,26 @@ class ScanNotifier extends Notifier<ScanState> {
       latestResult: result,
       scanHistory: [...state.scanHistory, result],
     );
+
+    // データベースに保存
+    _saveToDatabase(result);
+  }
+
+  Future<void> _saveToDatabase(VerificationResult result) async {
+    try {
+      final repository = ref.read(scanHistoryRepositoryProvider);
+      final orderId = state.currentOrder?.orderId ?? 'UNKNOWN';
+      
+      await repository.saveResult(
+        orderNumber: orderId,
+        barcode: result.scannedBarcode,
+        isCorrect: result.isCorrect,
+        errorCode: result.status != VerificationStatus.correct ? result.status.name : null,
+      );
+    } catch (e) {
+      // ログ保存エラーは致命的ではないが記録
+      debugPrint('Failed to save scan history: $e');
+    }
   }
 
   /// スキャンをリセット

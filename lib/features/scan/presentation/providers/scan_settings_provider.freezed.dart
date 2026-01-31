@@ -21,7 +21,8 @@ mixin _$ScanSettings {
  bool get enableCheckDigit;/// 1Dバーコードのパリティチェックを有効にするか
  bool get enableParityCheck;/// スタート/ストップキャラクタの検証を有効にするか
  bool get enableStartStopCheck;/// 連続スキャンの重複除外時間をミリ秒で指定 (0で無効)
- int get duplicateTimeoutMs;
+ int get duplicateTimeoutMs;/// ログのエクスポート先メールアドレス
+ String get exportEmail;
 /// Create a copy of ScanSettings
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -34,16 +35,16 @@ $ScanSettingsCopyWith<ScanSettings> get copyWith => _$ScanSettingsCopyWithImpl<S
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ScanSettings&&(identical(other.typeFilter, typeFilter) || other.typeFilter == typeFilter)&&(identical(other.rangeMode, rangeMode) || other.rangeMode == rangeMode)&&(identical(other.enableCheckDigit, enableCheckDigit) || other.enableCheckDigit == enableCheckDigit)&&(identical(other.enableParityCheck, enableParityCheck) || other.enableParityCheck == enableParityCheck)&&(identical(other.enableStartStopCheck, enableStartStopCheck) || other.enableStartStopCheck == enableStartStopCheck)&&(identical(other.duplicateTimeoutMs, duplicateTimeoutMs) || other.duplicateTimeoutMs == duplicateTimeoutMs));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ScanSettings&&(identical(other.typeFilter, typeFilter) || other.typeFilter == typeFilter)&&(identical(other.rangeMode, rangeMode) || other.rangeMode == rangeMode)&&(identical(other.enableCheckDigit, enableCheckDigit) || other.enableCheckDigit == enableCheckDigit)&&(identical(other.enableParityCheck, enableParityCheck) || other.enableParityCheck == enableParityCheck)&&(identical(other.enableStartStopCheck, enableStartStopCheck) || other.enableStartStopCheck == enableStartStopCheck)&&(identical(other.duplicateTimeoutMs, duplicateTimeoutMs) || other.duplicateTimeoutMs == duplicateTimeoutMs)&&(identical(other.exportEmail, exportEmail) || other.exportEmail == exportEmail));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,typeFilter,rangeMode,enableCheckDigit,enableParityCheck,enableStartStopCheck,duplicateTimeoutMs);
+int get hashCode => Object.hash(runtimeType,typeFilter,rangeMode,enableCheckDigit,enableParityCheck,enableStartStopCheck,duplicateTimeoutMs,exportEmail);
 
 @override
 String toString() {
-  return 'ScanSettings(typeFilter: $typeFilter, rangeMode: $rangeMode, enableCheckDigit: $enableCheckDigit, enableParityCheck: $enableParityCheck, enableStartStopCheck: $enableStartStopCheck, duplicateTimeoutMs: $duplicateTimeoutMs)';
+  return 'ScanSettings(typeFilter: $typeFilter, rangeMode: $rangeMode, enableCheckDigit: $enableCheckDigit, enableParityCheck: $enableParityCheck, enableStartStopCheck: $enableStartStopCheck, duplicateTimeoutMs: $duplicateTimeoutMs, exportEmail: $exportEmail)';
 }
 
 
@@ -54,7 +55,7 @@ abstract mixin class $ScanSettingsCopyWith<$Res>  {
   factory $ScanSettingsCopyWith(ScanSettings value, $Res Function(ScanSettings) _then) = _$ScanSettingsCopyWithImpl;
 @useResult
 $Res call({
- BarcodeTypeFilter typeFilter, ScanRangeMode rangeMode, bool enableCheckDigit, bool enableParityCheck, bool enableStartStopCheck, int duplicateTimeoutMs
+ BarcodeTypeFilter typeFilter, ScanRangeMode rangeMode, bool enableCheckDigit, bool enableParityCheck, bool enableStartStopCheck, int duplicateTimeoutMs, String exportEmail
 });
 
 
@@ -71,7 +72,7 @@ class _$ScanSettingsCopyWithImpl<$Res>
 
 /// Create a copy of ScanSettings
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? typeFilter = null,Object? rangeMode = null,Object? enableCheckDigit = null,Object? enableParityCheck = null,Object? enableStartStopCheck = null,Object? duplicateTimeoutMs = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? typeFilter = null,Object? rangeMode = null,Object? enableCheckDigit = null,Object? enableParityCheck = null,Object? enableStartStopCheck = null,Object? duplicateTimeoutMs = null,Object? exportEmail = null,}) {
   return _then(_self.copyWith(
 typeFilter: null == typeFilter ? _self.typeFilter : typeFilter // ignore: cast_nullable_to_non_nullable
 as BarcodeTypeFilter,rangeMode: null == rangeMode ? _self.rangeMode : rangeMode // ignore: cast_nullable_to_non_nullable
@@ -79,7 +80,8 @@ as ScanRangeMode,enableCheckDigit: null == enableCheckDigit ? _self.enableCheckD
 as bool,enableParityCheck: null == enableParityCheck ? _self.enableParityCheck : enableParityCheck // ignore: cast_nullable_to_non_nullable
 as bool,enableStartStopCheck: null == enableStartStopCheck ? _self.enableStartStopCheck : enableStartStopCheck // ignore: cast_nullable_to_non_nullable
 as bool,duplicateTimeoutMs: null == duplicateTimeoutMs ? _self.duplicateTimeoutMs : duplicateTimeoutMs // ignore: cast_nullable_to_non_nullable
-as int,
+as int,exportEmail: null == exportEmail ? _self.exportEmail : exportEmail // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 
@@ -164,10 +166,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( BarcodeTypeFilter typeFilter,  ScanRangeMode rangeMode,  bool enableCheckDigit,  bool enableParityCheck,  bool enableStartStopCheck,  int duplicateTimeoutMs)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( BarcodeTypeFilter typeFilter,  ScanRangeMode rangeMode,  bool enableCheckDigit,  bool enableParityCheck,  bool enableStartStopCheck,  int duplicateTimeoutMs,  String exportEmail)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ScanSettings() when $default != null:
-return $default(_that.typeFilter,_that.rangeMode,_that.enableCheckDigit,_that.enableParityCheck,_that.enableStartStopCheck,_that.duplicateTimeoutMs);case _:
+return $default(_that.typeFilter,_that.rangeMode,_that.enableCheckDigit,_that.enableParityCheck,_that.enableStartStopCheck,_that.duplicateTimeoutMs,_that.exportEmail);case _:
   return orElse();
 
 }
@@ -185,10 +187,10 @@ return $default(_that.typeFilter,_that.rangeMode,_that.enableCheckDigit,_that.en
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( BarcodeTypeFilter typeFilter,  ScanRangeMode rangeMode,  bool enableCheckDigit,  bool enableParityCheck,  bool enableStartStopCheck,  int duplicateTimeoutMs)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( BarcodeTypeFilter typeFilter,  ScanRangeMode rangeMode,  bool enableCheckDigit,  bool enableParityCheck,  bool enableStartStopCheck,  int duplicateTimeoutMs,  String exportEmail)  $default,) {final _that = this;
 switch (_that) {
 case _ScanSettings():
-return $default(_that.typeFilter,_that.rangeMode,_that.enableCheckDigit,_that.enableParityCheck,_that.enableStartStopCheck,_that.duplicateTimeoutMs);case _:
+return $default(_that.typeFilter,_that.rangeMode,_that.enableCheckDigit,_that.enableParityCheck,_that.enableStartStopCheck,_that.duplicateTimeoutMs,_that.exportEmail);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -205,10 +207,10 @@ return $default(_that.typeFilter,_that.rangeMode,_that.enableCheckDigit,_that.en
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( BarcodeTypeFilter typeFilter,  ScanRangeMode rangeMode,  bool enableCheckDigit,  bool enableParityCheck,  bool enableStartStopCheck,  int duplicateTimeoutMs)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( BarcodeTypeFilter typeFilter,  ScanRangeMode rangeMode,  bool enableCheckDigit,  bool enableParityCheck,  bool enableStartStopCheck,  int duplicateTimeoutMs,  String exportEmail)?  $default,) {final _that = this;
 switch (_that) {
 case _ScanSettings() when $default != null:
-return $default(_that.typeFilter,_that.rangeMode,_that.enableCheckDigit,_that.enableParityCheck,_that.enableStartStopCheck,_that.duplicateTimeoutMs);case _:
+return $default(_that.typeFilter,_that.rangeMode,_that.enableCheckDigit,_that.enableParityCheck,_that.enableStartStopCheck,_that.duplicateTimeoutMs,_that.exportEmail);case _:
   return null;
 
 }
@@ -220,7 +222,7 @@ return $default(_that.typeFilter,_that.rangeMode,_that.enableCheckDigit,_that.en
 @JsonSerializable()
 
 class _ScanSettings implements ScanSettings {
-  const _ScanSettings({this.typeFilter = BarcodeTypeFilter.auto, this.rangeMode = ScanRangeMode.singleNarrow, this.enableCheckDigit = true, this.enableParityCheck = true, this.enableStartStopCheck = true, this.duplicateTimeoutMs = 1000});
+  const _ScanSettings({this.typeFilter = BarcodeTypeFilter.auto, this.rangeMode = ScanRangeMode.singleNarrow, this.enableCheckDigit = true, this.enableParityCheck = true, this.enableStartStopCheck = true, this.duplicateTimeoutMs = 1000, this.exportEmail = ''});
   factory _ScanSettings.fromJson(Map<String, dynamic> json) => _$ScanSettingsFromJson(json);
 
 /// バーコード種別のフィルタ
@@ -235,6 +237,8 @@ class _ScanSettings implements ScanSettings {
 @override@JsonKey() final  bool enableStartStopCheck;
 /// 連続スキャンの重複除外時間をミリ秒で指定 (0で無効)
 @override@JsonKey() final  int duplicateTimeoutMs;
+/// ログのエクスポート先メールアドレス
+@override@JsonKey() final  String exportEmail;
 
 /// Create a copy of ScanSettings
 /// with the given fields replaced by the non-null parameter values.
@@ -249,16 +253,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ScanSettings&&(identical(other.typeFilter, typeFilter) || other.typeFilter == typeFilter)&&(identical(other.rangeMode, rangeMode) || other.rangeMode == rangeMode)&&(identical(other.enableCheckDigit, enableCheckDigit) || other.enableCheckDigit == enableCheckDigit)&&(identical(other.enableParityCheck, enableParityCheck) || other.enableParityCheck == enableParityCheck)&&(identical(other.enableStartStopCheck, enableStartStopCheck) || other.enableStartStopCheck == enableStartStopCheck)&&(identical(other.duplicateTimeoutMs, duplicateTimeoutMs) || other.duplicateTimeoutMs == duplicateTimeoutMs));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ScanSettings&&(identical(other.typeFilter, typeFilter) || other.typeFilter == typeFilter)&&(identical(other.rangeMode, rangeMode) || other.rangeMode == rangeMode)&&(identical(other.enableCheckDigit, enableCheckDigit) || other.enableCheckDigit == enableCheckDigit)&&(identical(other.enableParityCheck, enableParityCheck) || other.enableParityCheck == enableParityCheck)&&(identical(other.enableStartStopCheck, enableStartStopCheck) || other.enableStartStopCheck == enableStartStopCheck)&&(identical(other.duplicateTimeoutMs, duplicateTimeoutMs) || other.duplicateTimeoutMs == duplicateTimeoutMs)&&(identical(other.exportEmail, exportEmail) || other.exportEmail == exportEmail));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,typeFilter,rangeMode,enableCheckDigit,enableParityCheck,enableStartStopCheck,duplicateTimeoutMs);
+int get hashCode => Object.hash(runtimeType,typeFilter,rangeMode,enableCheckDigit,enableParityCheck,enableStartStopCheck,duplicateTimeoutMs,exportEmail);
 
 @override
 String toString() {
-  return 'ScanSettings(typeFilter: $typeFilter, rangeMode: $rangeMode, enableCheckDigit: $enableCheckDigit, enableParityCheck: $enableParityCheck, enableStartStopCheck: $enableStartStopCheck, duplicateTimeoutMs: $duplicateTimeoutMs)';
+  return 'ScanSettings(typeFilter: $typeFilter, rangeMode: $rangeMode, enableCheckDigit: $enableCheckDigit, enableParityCheck: $enableParityCheck, enableStartStopCheck: $enableStartStopCheck, duplicateTimeoutMs: $duplicateTimeoutMs, exportEmail: $exportEmail)';
 }
 
 
@@ -269,7 +273,7 @@ abstract mixin class _$ScanSettingsCopyWith<$Res> implements $ScanSettingsCopyWi
   factory _$ScanSettingsCopyWith(_ScanSettings value, $Res Function(_ScanSettings) _then) = __$ScanSettingsCopyWithImpl;
 @override @useResult
 $Res call({
- BarcodeTypeFilter typeFilter, ScanRangeMode rangeMode, bool enableCheckDigit, bool enableParityCheck, bool enableStartStopCheck, int duplicateTimeoutMs
+ BarcodeTypeFilter typeFilter, ScanRangeMode rangeMode, bool enableCheckDigit, bool enableParityCheck, bool enableStartStopCheck, int duplicateTimeoutMs, String exportEmail
 });
 
 
@@ -286,7 +290,7 @@ class __$ScanSettingsCopyWithImpl<$Res>
 
 /// Create a copy of ScanSettings
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? typeFilter = null,Object? rangeMode = null,Object? enableCheckDigit = null,Object? enableParityCheck = null,Object? enableStartStopCheck = null,Object? duplicateTimeoutMs = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? typeFilter = null,Object? rangeMode = null,Object? enableCheckDigit = null,Object? enableParityCheck = null,Object? enableStartStopCheck = null,Object? duplicateTimeoutMs = null,Object? exportEmail = null,}) {
   return _then(_ScanSettings(
 typeFilter: null == typeFilter ? _self.typeFilter : typeFilter // ignore: cast_nullable_to_non_nullable
 as BarcodeTypeFilter,rangeMode: null == rangeMode ? _self.rangeMode : rangeMode // ignore: cast_nullable_to_non_nullable
@@ -294,7 +298,8 @@ as ScanRangeMode,enableCheckDigit: null == enableCheckDigit ? _self.enableCheckD
 as bool,enableParityCheck: null == enableParityCheck ? _self.enableParityCheck : enableParityCheck // ignore: cast_nullable_to_non_nullable
 as bool,enableStartStopCheck: null == enableStartStopCheck ? _self.enableStartStopCheck : enableStartStopCheck // ignore: cast_nullable_to_non_nullable
 as bool,duplicateTimeoutMs: null == duplicateTimeoutMs ? _self.duplicateTimeoutMs : duplicateTimeoutMs // ignore: cast_nullable_to_non_nullable
-as int,
+as int,exportEmail: null == exportEmail ? _self.exportEmail : exportEmail // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'features/home/presentation/home_screen.dart';
+import 'features/scan/presentation/scan_screen.dart';
+import 'features/scan/presentation/settings_screen.dart';
+import 'features/history/presentation/history_screen.dart';
 
 void main() {
   runApp(
@@ -10,12 +14,40 @@ void main() {
   );
 }
 
+/// ルーティング設定
+final _routerProvider = Provider<GoRouter>((ref) {
+  return GoRouter(
+    initialLocation: '/',
+    routes: [
+      GoRoute(
+        path: '/',
+        builder: (context, state) => const HomeScreen(),
+      ),
+      GoRoute(
+        path: '/scan',
+        builder: (context, state) => const ScanScreen(),
+      ),
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/history',
+        builder: (context, state) => const HistoryScreen(),
+      ),
+    ],
+  );
+});
+
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return MaterialApp(
+    final router = ref.watch(_routerProvider);
+
+    return MaterialApp.router(
+      routerConfig: router,
       title: 'Zaikaku - 材料照合',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -32,7 +64,6 @@ class MyApp extends ConsumerWidget {
         ),
         useMaterial3: true,
       ),
-      home: const HomeScreen(),
     );
   }
 }

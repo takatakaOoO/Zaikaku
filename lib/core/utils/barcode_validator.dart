@@ -13,14 +13,13 @@ class ValidationResult {
 class BarcodeValidator {
   /// チェックデジットの検証
   static ValidationResult validateCheckDigit(String barcode) {
-    if (barcode.length == 13) {
+    if (barcode.length == 13 && RegExp(r'^[0-9]+$').hasMatch(barcode)) {
       // JAN-13 (EAN-13) の計算
       // 偶数桁の和*3 + 奇数桁(13桁目除く)の和
       int evenSum = 0;
       int oddSum = 0;
       for (int i = 0; i < 12; i++) {
-        int digit = int.tryParse(barcode[i]) ?? -1;
-        if (digit == -1) return ValidationResult.failure('数値以外の文字が含まれています');
+        int digit = int.tryParse(barcode[i]) ?? 0;
         if ((i + 1) % 2 == 0) {
           evenSum += digit;
         } else {
@@ -39,7 +38,7 @@ class BarcodeValidator {
     }
     
     // 他の規格（ITFなど）も必要に応じて追加可能
-    return ValidationResult.success(); // 未対応の形式はスルー（現状）
+    return ValidationResult.success(); // 13桁の数値以外、または他の形式はスルー
   }
 
   /// パリティチェック (簡易実装: 文字列長や特定の数値パターンなど)
