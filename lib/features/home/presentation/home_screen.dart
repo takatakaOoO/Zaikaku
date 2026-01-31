@@ -101,6 +101,21 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
+                const SizedBox(height: 16),
+                
+                // 製品マスタボタン
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.push('/products'),
+                    icon: const Icon(Icons.inventory_2),
+                    label: const Text(
+                      '製品マスタ',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

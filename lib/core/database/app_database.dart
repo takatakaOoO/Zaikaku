@@ -17,12 +17,43 @@ class ScanHistories extends Table {
   TextColumn get errorCode => text().nullable()();
 }
 
-@DriftDatabase(tables: [ScanHistories])
+/// 製品マスタテーブル
+class Products extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get name => text()(); // 製品名
+  TextColumn get modelNumber => text()(); // 型番
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// 製品に紐づく材料バーコードテーブル (1対多)
+class ProductMaterials extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get productId => integer().references(Products, #id)();
+  TextColumn get barcode => text()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+@DriftDatabase(tables: [ScanHistories, Products, ProductMaterials])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (Migrator m) async {
+      await m.createAll();
+    },
+    onUpgrade: (Migrator m, int from, int to) async {
+      if (from < 2) {
+        // Version 2: Products, ProductMaterials テーブルを追加
+        await m.createTable(products);
+        await m.createTable(productMaterials);
+      }
+    },
+  );
 }
 
 LazyDatabase _openConnection() {

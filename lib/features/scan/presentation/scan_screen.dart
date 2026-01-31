@@ -6,17 +6,18 @@ import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:io';
 import '../../../core/providers/audio_provider.dart';
-import '../../../data/repositories/mock_order_repository.dart';
-import '../../../domain/usecases/verify_material_usecase.dart';
+import '../../../core/providers/repository_providers.dart';
 import '../../../domain/models/verification_result.dart';
+import '../../../domain/models/product_with_materials.dart';
 import '../../../core/utils/barcode_validator.dart';
+import '../../product/presentation/providers/product_provider.dart';
 import 'providers/scan_state_provider.dart';
 import 'providers/scan_settings_provider.dart';
 import 'settings_screen.dart';
 
 /// バーコードスキャン画面
 /// 
-/// カメラでバーコードをスキャンし、製造指示書と照合します。
+/// カメラでバーコードをスキャンし、製品マスタと照合します。
 class ScanScreen extends ConsumerStatefulWidget {
   const ScanScreen({super.key});
 
@@ -28,11 +29,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
   final MobileScannerController _scannerController = MobileScannerController(
     detectionSpeed: DetectionSpeed.normal,
     facing: CameraFacing.back,
-    // 初期フォーマットは後で設定反映
   );
-  
-  final VerifyMaterialUseCase _verifyMaterialUseCase = VerifyMaterialUseCase();
-  final MockOrderRepository _orderRepository = MockOrderRepository();
   
   // 連続スキャン防止用
   String? _lastScannedBarcode;
@@ -60,11 +57,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
   @override
   void initState() {
     super.initState();
-    // 初期製造指示書を設定
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final order = _orderRepository.getCurrentOrder();
-      ref.read(scanStateProvider.notifier).setOrder(order);
-    });
+    // 初期状態では製品未選択。ユーザーが選択するまで待機。
   }
 
   @override
@@ -118,8 +111,18 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
   /// バーコード検出時の処理
   void _onBarcodeDetected(BarcodeCapture capture) {
     final settings = ref.read(scanSettingsProvider);
+    final scanNotifier = ref.read(scanStateProvider.notifier);
+    final scanState = ref.read(scanStateProvider);
     final barcodes = capture.barcodes;
     if (barcodes.isEmpty) return;
+
+    // 製品が選択されていない場合は処理しない
+    if (scanState.activeProduct == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('製品を選択してからスキャンしてください')),
+      );
+      return;
+    }
 
     for (final barcodeObj in barcodes) {
       final barcode = barcodeObj.rawValue;
@@ -134,17 +137,8 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
         }
       }
 
-      // 照合実行
-      final scanState = ref.read(scanStateProvider);
-      if (scanState.currentOrder == null) return;
-
-      final result = _verifyMaterialUseCase.execute(
-        barcode,
-        scanState.currentOrder!,
-      );
-
-      // 結果を状態に追加
-      ref.read(scanStateProvider.notifier).addResult(result);
+      // 照合実行 (ScanNotifier内で処理)
+      final result = scanNotifier.verifyBarcode(barcode);
 
       // 音声フィードバック
       final audioService = ref.read(audioServiceProvider);
@@ -158,6 +152,64 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
       if (settings.rangeMode == ScanRangeMode.singleNarrow) {
         break;
       }
+    }
+  }
+
+  /// 製品選択ダイアログを表示
+  Future<void> _showProductSelector() async {
+    // ロード中の可能性を考慮し、最新のデータを取得
+    final List<ProductWithMaterials> products;
+    try {
+      products = await ref.read(productListProvider.future);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('製品リストの取得に失敗しました: $e')),
+        );
+      }
+      return;
+    }
+    
+    if (products.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('製品が登録されていません。製品マスタから追加してください。')),
+        );
+      }
+      return;
+    }
+
+    final selected = await showDialog<ProductWithMaterials>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('製品を選択'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: products.length,
+            itemBuilder: (context, index) {
+              final product = products[index];
+              return ListTile(
+                leading: const CircleAvatar(child: Icon(Icons.inventory)),
+                title: Text(product.name),
+                subtitle: Text('型番: ${product.modelNumber}'),
+                onTap: () => Navigator.pop(context, product),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('キャンセル'),
+          ),
+        ],
+      ),
+    );
+
+    if (selected != null) {
+      ref.read(scanStateProvider.notifier).setActiveProductDirect(selected);
     }
   }
 
@@ -202,8 +254,8 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
       ),
       body: Column(
         children: [
-          // 製造指示書情報
-          _buildOrderInfo(scanState),
+          // 製品情報（タップで選択可能）
+          _buildProductInfo(scanState),
           
           // カメラプレビュー
           Expanded(
@@ -236,40 +288,46 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
     );
   }
 
-  /// 製造指示書情報ウィジェット
-  Widget _buildOrderInfo(ScanState state) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: Row(
-        children: [
-          Icon(
-            Icons.assignment,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  state.currentOrder?.orderId ?? '指示書未選択',
-                  style: Theme.of(context).textTheme.labelMedium,
-                ),
-                Text(
-                  state.currentOrder?.productName ?? '---',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+  /// 製品情報ウィジェット（タップで製品選択ダイアログを表示）
+  Widget _buildProductInfo(ScanState state) {
+    final product = state.activeProduct;
+    
+    return InkWell(
+      onTap: _showProductSelector,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        child: Row(
+          children: [
+            Icon(
+              product != null ? Icons.inventory : Icons.touch_app,
+              color: Theme.of(context).colorScheme.primary,
             ),
-          ),
-          Text(
-            '必要材料: ${state.currentOrder?.requiredMaterialBarcodes.length ?? 0}点',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ],
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product != null ? '型番: ${product.modelNumber}' : 'タップして製品を選択',
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+                  Text(
+                    product?.name ?? '製品未選択',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              '材料: ${product?.materialBarcodes.length ?? 0}点',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const Icon(Icons.arrow_drop_down),
+          ],
+        ),
       ),
     );
   }

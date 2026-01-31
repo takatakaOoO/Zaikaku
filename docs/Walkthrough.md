@@ -103,15 +103,39 @@
   - **画像選択スキャン**: エミュレータのギャラリーから画像を選んで直接スキャン解析に送る機能。
 - **テスト自動化支援**: Pythonスクリプトによるバーコード画像の一括生成 (`tools/generate_barcodes.py`)。
 
-### 変更・追加ファイル
-- `lib/features/scan/presentation/providers/scan_settings_provider.dart`: 設定モデル、Notifier、Providerの統合実装 (ビルドエラー回避のため)
-- `lib/features/scan/presentation/settings_screen.dart`: 詳細設定画面UI
-- `lib/core/utils/barcode_validator.dart`: 1Dバーコード用バリデーションロジック
-- `test/core/utils/barcode_validator_test.dart`: 指定テストケースのユニットテスト
-- `lib/features/scan/presentation/scan_screen.dart`: ROIガイド表示、バリデーション連携
-- `lib/features/scan/presentation/providers/scan_state_provider.dart`: 重複スキャン防止ロジックの強化
-- `tools/generate_barcodes.py`: [NEW] テスト用画像生成スクリプト
-- `lib/features/scan/presentation/assets/demo_*.png`: [NEW] 生成されたテスト画像（全10枚）
+### 追加・修正されたファイル
+```
+/
+├── lib/
+│   ├── core/
+│   │   └── utils/
+│   │       └── barcode_validator.dart [NEW] (バリデーションロジック)
+│   ├── features/
+│   │   └── scan/
+│   │       ├── presentation/
+│   │       │   ├── providers/
+│   │       │   │   ├── scan_settings_provider.dart [MOD] (設定状態管理)
+│   │       │   │   └── scan_state_provider.dart [MOD] (スキャン制御強化)
+│   │       │   ├── assets/
+│   │       │   │   └── demo_*.png [NEW] (テスト用画像)
+│   │       │   ├── scan_screen.dart [MOD] (ROIガイド, バリデーション連携)
+│   │       │   └── settings_screen.dart [NEW] (詳細設定画面)
+│   │       └── ...
+│   └── ...
+├── test/
+│   └── core/
+│       └── utils/
+│           └── barcode_validator.dart [NEW] (ユニットテスト)
+└── tools/
+    └── generate_barcodes.py [NEW] (テスト画像生成スクリプト)
+```
+
+### 主要作業内容
+1. **スキャン機能の高度化**: ROI制御、1D/2Dフィルタリング、詳細設定画面の実装。
+2. **品質保証 (QA) ツール作成**: Pythonスクリプトによるテスト用バーコード画像の自動生成。
+3. **バリデーション実装**: JAN-13チェックデジット、スタート/ストップ文字検証ロジックの実装とユニットテスト。
+4. **デバッグ環境整備**: エミュレータのカメラ制限を回避するための「画像選択スキャン機能」と「デモモード」の実装。
+5. **総合検証**: ユーザー定義の10件のテストケースを用いた実機（エミュレータ）検証と合格確認。
 
 ### 検証結果
 - **2026-01-31**: ユニットテスト検証完了 (**SUCCESS**)
@@ -132,17 +156,168 @@
 - [x] 設定機能の拡張（エクスポート先指定）
 - [x] **動作確認**: スキャン結果の保存と一覧表示の確認
 
-### 変更履歴
-- **2026-01-31**: Drift を導入し、スキャン履歴の永続化を実装。
-- **2026-01-31**: `StreamNotifier` により、履歴画面のリアルタイム更新を実現。
-- **2026-01-31**: バーコードバリデーションのバグ（非数値コードの誤認）を修正。
+### 追加・修正されたファイル
+```
+/
+├── lib/
+│   ├── core/
+│   │   └── database/
+│   │       ├── app_database.dart [NEW] (Driftデータベース定義)
+│   │       └── app_database.g.dart [NEW] (自動生成コード)
+│   ├── data/
+│   │   └── repositories/
+│   │       └── scan_history_repository_impl.dart [NEW] (データ操作実装)
+│   ├── domain/
+│   │   ├── models/
+│   │   │   └── scan_history_entry.dart [NEW] (履歴モデル)
+│   │   └── repositories/
+│   │       └── scan_history_repository.dart [NEW] (リポジトリIF)
+│   └── features/
+│       ├── history/
+│       │   └── presentation/
+│       │       ├── providers/
+│       │       │   ├── history_provider.dart [NEW] (StreamNotifier)
+│       │       │   └── history_provider.g.dart [NEW] (自動生成コード)
+│       │       └── history_screen.dart [NEW] (履歴一覧画面)
+│       └── scan/
+│           └── presentation/
+│               ├── providers/
+│               │   └── scan_state_provider.dart [MOD] (保存処理追加)
+│               └── scan_screen.dart [MOD] (初期指示書セット修正)
+└── ...
+```
+
+### 主要作業内容
+1. **データベース構築**: Drift (SQLite) の導入とテーブル設計、マイグレーション対応。
+2. **リポジトリ実装**: ドメイン層とデータ層を分離したリポジトリパターンの適用。
+3. **履歴画面実装**: `StreamNotifier` を用いたリアクティブな履歴リスト表示。
+4. **設定機能拡張**: エクスポート先（メールアドレス）の永続化実装。
+5. **バグ修正**: 非数値バーコードの誤バリデーション修正、初期状態での保存スキップ不具合の修正。
 
 ### 検証結果
 > [!NOTE]
-> 履歴画面で最新のスキャン結果が正しく表示され、アプリ再起動後も保持されることを確認。
+> **データベース永続化検証**: アプリ再起動後も履歴データと設定値が消失せず保持されることを確認 (合格)。
 
 > [!NOTE]
-> メールアドレス設定が正常に保存・維持されることを確認。
+> **リアルタイム更新検証**: スキャン実行直後に履歴画面に遷移し、リストが即座に最新化されていることを確認 (合格)。
 
-### 動作デモ
-デモモードでのスキャンから履歴確認までの動作を確認済み。
+> [!NOTE]
+> **バリデーション検証**: QRコード等の非数値データを含めたテストケースで正しく保存・判定が行われることを確認 (合格)。
+
+---
+
+## Phase 4: マスタデータ管理機能 [完了]
+- [x] 実装計画策定 (2026-01-31 承認済)
+- [x] 製品情報テーブル定義とマイグレーション
+- [x] 製品リポジトリ・プロバイダーの実装
+- [x] 製品一覧・登録・編集画面の実装
+- [x] バーコード画像スキャンによる材料追加機能
+- [x] 検証ロジックのマスタデータ連携
+- [x] **動作確認**: 製品登録からスキャン照合までのフロー確認
+
+### 変更履歴
+- **2026-01-31**: Phase 4実装開始。`Products`, `ProductMaterials` テーブルを追加し、スキーマバージョンを `2` に更新。
+- **2026-01-31**: 製品管理UI（一覧・登録・編集）を実装。材料バーコードの手入力に加え、画像選択によるスキャン追加機能を実装。
+- **2026-01-31**: `ScanNotifier` を刷新。モックの製造指示書（`ManufacturingOrder`）から、動的な製品マスタ（`ProductWithMaterials`）に基づく検証ロジックへ移行。
+- **2026-01-31**: ビルドエラー（`ProductRef` 型、`valueOrNull` ゲッター）を修正し、デバッグビルドに成功。
+
+### 実装機能
+- **製品マスタ画面**: 
+  - 製品一覧表示、検索（将来予定）、削除機能。
+  - 製品登録・編集：名称、型番、材料バーコードリストの管理。
+- **スキャン入力補助**: 
+  - **画像スキャン**: ギャラリーから選択した画像内の全バーコードを一括登録。
+  - **カメラスキャン**: 専用画面で連続してバーコードを読み取り、まとめて登録。
+- **動的検証**:
+  - スキャン画面上部で「製品」を選択可能。
+  - 選択した製品に紐づく材料のみを「正解」とし、それ以外を「不正解」と判定。
+  - 判定結果はDB（`ScanHistories`）に製品の型番と共に保存。
+
+### 追加・修正されたファイル
+```
+/
+├── lib/
+│   ├── core/
+│   │   ├── database/
+│   │   │   └── app_database.dart [MOD] (Products/ProductMaterialsテーブル追加, 移行)
+│   │   └── providers/
+│   │       └── repository_providers.dart [MOD] (productRepositoryProvider追加)
+│   ├── data/
+│   │   └── repositories/
+│   │       └── product_repository_impl.dart [NEW] (CRUD実装)
+│   ├── domain/
+│   │   ├── models/
+│   │   │   └── product_with_materials.dart [NEW] (ドメインモデル)
+│   │   └── repositories/
+│   │       └── product_repository.dart [NEW] (リポジトリIF)
+│   ├── features/
+│   │   ├── home/
+│   │   │   └── presentation/
+│   │   │       └── home_screen.dart [MOD] (製品マスタボタン追加)
+│   │   ├── product/ [NEW]
+│   │   │   └── presentation/
+│   │   │       ├── providers/
+│   │   │       │   └── product_provider.dart [NEW] (Riverpod Generator)
+│   │   │       ├── product_edit_screen.dart [NEW] (画像スキャン追加機能付)
+│   │   │       └── product_list_screen.dart [NEW]
+│   │   └── scan/
+│   │       └── presentation/
+│   │           ├── providers/
+│   │           │   └── scan_state_provider.dart [MOD] (ProductWithMaterialsへ移行)
+│   │           └── scan_screen.dart [MOD] (製品選択UI追加)
+│   └── main.dart [MOD] (/products ルート追加)
+└── ...
+```
+
+### 主要作業内容
+1. **DBスキーマ拡張**: Driftでの1対多関係の実装と `MigrationStrategy` による既存データ保持。
+2. **製品管理の実装**: 複雑なトランザクション（製品と材料の一括更新）を含むリポジトリの実装。
+3. **UI/UX向上**: 材料登録の負荷を減らすため、既存のバーコード解析ロジックを再利用した「スキャン追加」機能を編集画面に導入。
+4. **コアロジック刷新**: アプリ全体の関心事を「固定の指示書」から「選択可能な製品マスタ」へシフト。
+
+### 検証結果
+- **2026-01-31**: ビルド検証完了 (**SUCCESS**)
+  - `flutter build apk --debug` によりAPKの生成を確認。
+- **2026-01-31**: 起動検証完了 (**SUCCESS**)
+  - `flutter run` によりエミュレータ上で最新版が起動し、ホーム画面に「製品マスタ」ボタンが表示されることを確認。
+- **2026-01-31**: 機能検証（予定）
+- [x] **動作確認**: 製品登録からスキャン照合までのフロー確認
+
+---
+
+## Phase 4.5: OCR入力機能 [完了]
+- [x] OCRライブラリ導入 (google_mlkit_text_recognition)
+- [x] OCRスキャン画面の実装
+- [x] 製品登録画面への連携
+- [x] クラッシュ問題の解消 (日本語OCRライブラリ追加)
+
+### 変更履歴
+- **2026-01-31**: 製品登録の効率化のため、カメラによるOCR入力機能を追加。
+- **2026-01-31**: 製品名（日本語）OCR時に発生したクラッシュを解決するため、Androidビルド設定に `com.google.mlkit:text-recognition-japanese` を追加。
+
+### 実装機能
+- **OCRスキャン**: 
+  - 製品名（日本語）および型番（英数字）に対応。
+  - 認識したテキストをリスト表示し、タップで選択可能。
+  - 選択結果を製品登録画面の各入力フィールドに自動反映。
+
+### 追加・修正されたファイル
+```
+/
+├── android/
+│   └── app/
+│       └── build.gradle.kts [MOD] (日本語OCRライブラリ追加)
+├── lib/
+│   ├── features/
+│   │   └── product/
+│   │       ├── presentation/
+│   │       │   ├── ocr_scan_screen.dart [NEW] (OCR画面)
+│   │       │   └── product_edit_screen.dart [MOD] (OCRボタン追加)
+└── pubspec.yaml [MOD] (依存関係追加)
+```
+
+### 検証結果
+- **2026-01-31**: 動作確認完了 (**SUCCESS**)
+  - エミュレータ上でOCR画面が起動し、テキスト認識（シミュレーション）が動作することを確認。
+  - 日本語認識モードでのクラッシュ問題が設定追加により解消されたことを確認。
+

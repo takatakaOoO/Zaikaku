@@ -1,12 +1,13 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../domain/models/manufacturing_order.dart';
+import '../../../../domain/models/product_with_materials.dart';
 import '../../../../domain/models/verification_result.dart';
 import '../../../../core/providers/repository_providers.dart';
 
 /// スキャン画面の状態
 class ScanState {
-  /// 現在の製造指示書
-  final ManufacturingOrder? currentOrder;
+  /// 現在のアクティブ製品（マスタからロード）
+  final ProductWithMaterials? activeProduct;
   
   /// スキャン履歴
   final List<VerificationResult> scanHistory;
@@ -21,7 +22,7 @@ class ScanState {
   final String? errorMessage;
 
   const ScanState({
-    this.currentOrder,
+    this.activeProduct,
     this.scanHistory = const [],
     this.latestResult,
     this.isScanning = true,
@@ -30,16 +31,17 @@ class ScanState {
 
   /// コピーを作成
   ScanState copyWith({
-    ManufacturingOrder? currentOrder,
+    ProductWithMaterials? activeProduct,
     List<VerificationResult>? scanHistory,
     VerificationResult? latestResult,
     bool? isScanning,
     String? errorMessage,
+    bool clearActiveProduct = false,
     bool clearLatestResult = false,
     bool clearErrorMessage = false,
   }) {
     return ScanState(
-      currentOrder: currentOrder ?? this.currentOrder,
+      activeProduct: clearActiveProduct ? null : (activeProduct ?? this.activeProduct),
       scanHistory: scanHistory ?? this.scanHistory,
       latestResult: clearLatestResult ? null : (latestResult ?? this.latestResult),
       isScanning: isScanning ?? this.isScanning,
@@ -52,16 +54,68 @@ class ScanState {
 class ScanNotifier extends Notifier<ScanState> {
   @override
   ScanState build() {
-    // 開発・検証フェーズのため、初期状態でモック指示書をセットしておく
-    final mockRepo = ref.read(mockOrderRepositoryProvider);
-    return ScanState(
-      currentOrder: mockRepo.getCurrentOrder(),
-    );
+    // 初期状態は製品未選択
+    return const ScanState();
   }
 
-  /// 製造指示書を設定
-  void setOrder(ManufacturingOrder order) {
-    state = state.copyWith(currentOrder: order);
+  /// アクティブ製品を設定（製品マスタから検索して設定）
+  Future<void> setActiveProduct(int productId) async {
+    final repo = ref.read(productRepositoryProvider);
+    final product = await repo.getProduct(productId);
+    if (product != null) {
+      state = state.copyWith(activeProduct: product);
+    }
+  }
+
+  /// アクティブ製品を直接設定
+  void setActiveProductDirect(ProductWithMaterials product) {
+    state = state.copyWith(activeProduct: product);
+  }
+
+  /// アクティブ製品をクリア
+  void clearActiveProduct() {
+    state = state.copyWith(clearActiveProduct: true);
+  }
+
+  /// バーコードを照合し結果を追加
+  VerificationResult verifyBarcode(String barcode) {
+    final timestamp = DateTime.now();
+    final product = state.activeProduct;
+
+    VerificationResult result;
+
+    if (barcode.isEmpty) {
+      result = VerificationResult(
+        scannedBarcode: barcode,
+        status: VerificationStatus.notFound,
+        message: 'バーコードが読み取れませんでした',
+        timestamp: timestamp,
+      );
+    } else if (product == null) {
+      result = VerificationResult(
+        scannedBarcode: barcode,
+        status: VerificationStatus.notFound,
+        message: '製品が選択されていません',
+        timestamp: timestamp,
+      );
+    } else if (product.containsMaterial(barcode)) {
+      result = VerificationResult(
+        scannedBarcode: barcode,
+        status: VerificationStatus.correct,
+        message: '正解！正しい材料です',
+        timestamp: timestamp,
+      );
+    } else {
+      result = VerificationResult(
+        scannedBarcode: barcode,
+        status: VerificationStatus.incorrect,
+        message: '不正解！この材料は必要ありません',
+        timestamp: timestamp,
+      );
+    }
+
+    addResult(result);
+    return result;
   }
 
   /// 照合結果を追加
@@ -88,10 +142,10 @@ class ScanNotifier extends Notifier<ScanState> {
   Future<void> _saveToDatabase(VerificationResult result) async {
     try {
       final repository = ref.read(scanHistoryRepositoryProvider);
-      final orderId = state.currentOrder?.orderId ?? 'UNKNOWN';
+      final productId = state.activeProduct?.modelNumber ?? 'UNKNOWN';
       
       await repository.saveResult(
-        orderNumber: orderId,
+        orderNumber: productId,
         barcode: result.scannedBarcode,
         isCorrect: result.isCorrect,
         errorCode: result.status != VerificationStatus.correct ? result.status.name : null,

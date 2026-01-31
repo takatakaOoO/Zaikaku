@@ -5,6 +5,7 @@ import 'features/home/presentation/home_screen.dart';
 import 'features/scan/presentation/scan_screen.dart';
 import 'features/scan/presentation/settings_screen.dart';
 import 'features/history/presentation/history_screen.dart';
+import 'features/product/presentation/product_list_screen.dart';
 
 void main() {
   runApp(
@@ -34,6 +35,10 @@ final _routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/history',
         builder: (context, state) => const HistoryScreen(),
+      ),
+      GoRoute(
+        path: '/products',
+        builder: (context, state) => const ProductListScreen(),
       ),
     ],
   );
