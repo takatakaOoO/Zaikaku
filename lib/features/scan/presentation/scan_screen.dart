@@ -24,10 +24,63 @@ class ScanScreen extends ConsumerStatefulWidget {
 }
 
 class _ScanScreenState extends ConsumerState<ScanScreen> {
-  final MobileScannerController _scannerController = MobileScannerController(
-    detectionSpeed: DetectionSpeed.normal,
-    facing: CameraFacing.back,
-  );
+  late MobileScannerController _scannerController;
+  Rect? _scanWindow;
+
+  @override
+  void initState() {
+    super.initState();
+    _initController();
+  }
+
+  void _initController() {
+    final settings = ref.read(scanSettingsProvider);
+    _scannerController = MobileScannerController(
+      formats: _getFormats(settings.typeFilter),
+      detectionSpeed: DetectionSpeed.normal,
+      facing: CameraFacing.back,
+    );
+  }
+
+  List<BarcodeFormat> _getFormats(BarcodeTypeFilter filter) {
+    switch (filter) {
+      case BarcodeTypeFilter.only1D:
+        return [
+          BarcodeFormat.code39,
+          BarcodeFormat.code93,
+          BarcodeFormat.code128,
+          BarcodeFormat.ean8,
+          BarcodeFormat.ean13,
+          BarcodeFormat.itf,
+          BarcodeFormat.codabar,
+          BarcodeFormat.upcA,
+          BarcodeFormat.upcE,
+        ];
+      case BarcodeTypeFilter.only2D:
+        return [
+          BarcodeFormat.qrCode,
+          BarcodeFormat.aztec,
+          BarcodeFormat.dataMatrix,
+          BarcodeFormat.pdf417,
+        ];
+      case BarcodeTypeFilter.auto:
+        return []; // 制限なし
+    }
+  }
+
+  // スキャン設定が変更された場合にコントローラーを再起動する仕組み
+  void _listenSettings() {
+    ref.listen(scanSettingsProvider, (previous, next) {
+      if (previous?.typeFilter != next.typeFilter) {
+        // フィルタが変わったらコントローラーを再作成（カメラ再起動）
+        setState(() {
+          _scannerController.dispose();
+          _initController();
+          _scanWindow = null; // リセット
+        });
+      }
+    });
+  }
 
   bool _isScanTriggered = false;
 
@@ -91,32 +144,70 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
     final barcodes = capture.barcodes;
     if (barcodes.isEmpty) return;
 
-    setState(() => _isScanTriggered = false);
-    // エラー表示があればクリア
-    ref.read(scanStateProvider.notifier).clearError();
-
     final settings = ref.read(scanSettingsProvider);
     final scanNotifier = ref.read(scanStateProvider.notifier);
+    final audioService = ref.read(audioServiceProvider);
 
     for (final barcodeObj in barcodes) {
       final barcode = barcodeObj.rawValue;
       if (barcode == null) continue;
 
-      if (settings.enableCheckDigit) {
-        final check = BarcodeValidator.validateCheckDigit(barcode);
-        if (!check.isValid) continue;
+      // 1. 1D/2D フィルタリング
+      if (settings.typeFilter == BarcodeTypeFilter.only1D) {
+        if (_is2DCode(barcodeObj.format)) continue;
+      } else if (settings.typeFilter == BarcodeTypeFilter.only2D) {
+        if (!_is2DCode(barcodeObj.format)) continue;
       }
 
+      // 2. バリデーション実行
+      ValidationResult? validationError;
+
+      // チェックデジット
+      if (settings.enableCheckDigit) {
+        final result = BarcodeValidator.validateCheckDigit(barcode);
+        if (!result.isValid) validationError = result;
+      }
+
+      // パリティチェック (エラーがなければ次へ)
+      if (validationError == null && settings.enableParityCheck) {
+        final result = BarcodeValidator.validateParity(barcode);
+        if (!result.isValid) validationError = result;
+      }
+
+      // スタート/ストップキャラクタ (エラーがなければ次へ)
+      if (validationError == null && settings.enableStartStopCheck) {
+        final result = BarcodeValidator.validateStartStopCharacters(barcode);
+        if (!result.isValid) validationError = result;
+      }
+
+      // バリデーションエラーがある場合
+      if (validationError != null) {
+        setState(() => _isScanTriggered = false);
+        scanNotifier.setError(validationError.errorMessage ?? 'バーコードが正常に読み取れない（エラー）');
+        audioService.playIncorrectSound();
+        return; // このフレームの処理を終了
+      }
+
+      // 3. 正常系・照合処理
+      setState(() => _isScanTriggered = false);
+      scanNotifier.clearError();
+
       final result = scanNotifier.verifyBarcode(barcode);
-      final audioService = ref.read(audioServiceProvider);
       
       if (result.isCorrect) {
         audioService.playCorrectSound();
       } else {
         audioService.playIncorrectSound();
       }
-      break; 
+      return; // 最初の有効なコードで完了
     }
+  }
+
+  bool _is2DCode(BarcodeFormat format) {
+    return format == BarcodeFormat.qrCode || 
+           format == BarcodeFormat.aztec || 
+           format == BarcodeFormat.dataMatrix || 
+           format == BarcodeFormat.pdf417;
   }
 
   void _onShutterPressed() {
@@ -190,8 +281,13 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _listenSettings();
     final scanState = ref.watch(scanStateProvider);
     final settings = ref.watch(scanSettingsProvider);
+    
+    // スキャン範囲の計算
+    _scanWindow = _calculateScanWindow(context);
+
     final size = MediaQuery.of(context).size;
     final topPadding = MediaQuery.of(context).padding.top;
     
@@ -208,6 +304,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
             child: MobileScanner(
               controller: _scannerController,
               onDetect: _onBarcodeDetected,
+              scanWindow: settings.rangeMode == ScanRangeMode.singleNarrow ? _scanWindow : null,
             ),
           ),
           
@@ -528,5 +625,23 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
          (h) => h.scannedBarcode == code && h.status == VerificationStatus.correct
        );
     }).length;
+  }
+
+  /// スキャン範囲を計算する (MobileScannerのUIレイアウト座標系)
+  Rect _calculateScanWindow(BuildContext context) {
+    // 画面中央に250x100(Narrow) または 250x250(Normal) の枠がある
+    final settings = ref.read(scanSettingsProvider);
+    final isNarrow = settings.rangeMode == ScanRangeMode.singleNarrow;
+    
+    final scanWidth = 250.0;
+    final scanHeight = isNarrow ? 100.0 : 250.0;
+    
+    final displaySize = MediaQuery.of(context).size;
+    final double left = (displaySize.width - scanWidth) / 2;
+    // UI上の overlayTop に合わせる (build内の定義: overlayTop = topPadding + 60.0 + 16.0)
+    final topPadding = MediaQuery.of(context).padding.top;
+    final double top = topPadding + 60.0 + 16.0;
+
+    return Rect.fromLTWH(left, top, scanWidth, scanHeight);
   }
 }

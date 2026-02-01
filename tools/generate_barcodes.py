@@ -129,5 +129,17 @@ def main():
     img.paste(jan, (50, 50))
     save_image(img, 'demo_10')
 
+    # Case 11: JAN-8 CD Error
+    img = create_canvas()
+    # python-barcodeで8桁を生成するには EAN8 を使う
+    from barcode import EAN8
+    writer = ImageWriter()
+    ean = EAN8('4901234', writer=writer) # ライブラリは自動で正しいCD '1' を付ける
+    jan8 = ean.render()
+    img.paste(jan8, (150, 100))
+    draw = ImageDraw.Draw(img)
+    draw.text((10, 10), "JAN-8 CD ERROR TEST: 49012347", fill="red")
+    save_image(img, 'demo_11')
+
 if __name__ == "__main__":
     main()

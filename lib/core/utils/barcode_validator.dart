@@ -33,7 +33,7 @@ class BarcodeValidator {
       if (checkDigit == actualCheckDigit) {
         return ValidationResult.success();
       } else {
-        return ValidationResult.failure('チェックデジットが一致しません (期待: $checkDigit, 実際: $actualCheckDigit)');
+        return ValidationResult.failure('バーコードが正常に読み取れない（CDエラー）');
       }
     }
     
@@ -45,7 +45,7 @@ class BarcodeValidator {
   static ValidationResult validateParity(String barcode) {
     // デモ用: 'PARITY-ERROR' を含む場合はエラー
     if (barcode.contains('PARITY-ERROR')) {
-      return ValidationResult.failure('パリティチェックエラー（不整合を検知）');
+      return ValidationResult.failure('バーコードが正常に読み取れない（パリティエラー）');
     }
     return ValidationResult.success();
   }
@@ -60,9 +60,9 @@ class BarcodeValidator {
     // ケース8: 'MISSING-START' -> スタート文字なし
     // ケース9: 'MISSING-STOP' -> ストップ文字なし
     // ケース10: 'MISSING-BOTH' -> 両方なし
-    if (barcode.startsWith('MISSING-START')) return ValidationResult.failure('スタートキャラクタが欠落しています');
-    if (barcode.endsWith('MISSING-STOP')) return ValidationResult.failure('ストップキャラクタが欠落しています');
-    if (barcode.contains('MISSING-BOTH')) return ValidationResult.failure('スタート/ストップキャラクタが共に欠落しています');
+    if (barcode.startsWith('MISSING-START')) return ValidationResult.failure('バーコードが正常に読み取れない（スタート文字欠落）');
+    if (barcode.endsWith('MISSING-STOP')) return ValidationResult.failure('バーコードが正常に読み取れない（ストップ文字欠落）');
+    if (barcode.contains('MISSING-BOTH')) return ValidationResult.failure('バーコードが正常に読み取れない（スタート/ストップ文字欠落）');
 
     if (expectedStart != null && !barcode.startsWith(expectedStart)) {
       return ValidationResult.failure('スタートキャラクタが不足しています (期待: $expectedStart)');
