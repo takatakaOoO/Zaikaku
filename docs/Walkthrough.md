@@ -505,3 +505,30 @@
   - `flutter build appbundle --release --dart-define=ADMOB_BANNER_ID_ANDROID=...` が成功。
   - 秘匿情報がソースコード上から排除され、Git追跡対象外となっていることを確認。
 
+---
+
+## Phase 8: ストア審査と公開 [進行中]
+- [x] 実装計画策定 (2026-02-01 承認済)
+- [x] ストア掲載用資産の準備
+  - [x] アプリアイコン (512x512px)
+  - [x] フィーチャーグラフィック (1024x500px)
+- [x] ストア掲載情報ドラフトの作成
+- [x] 作業マニュアル (GitHub Pages / スクリーンショット手順) の作成
+
+### 変更履歴
+- **2026-02-01**: Phase 8 実装計画を策定し承認を得た。
+- **2026-02-01**: Google Play Store 登録に必要な資産（512pxアイコン、フィーチャーグラフィック）を生成し、`store_assets/` ディレクトリに整理。
+- **2026-02-01**: ユーザー様が実施するストア登録・プライバシーポリシー公開を支援するための詳細なマニュアル（`STORE_REGISTRATION_MANUAL.md`）を作成。
+
+### 実装・準備された資産
+- **ロゴ**: `store_assets/icon_512.png` (Google Play要件準拠)
+- **宣伝画像**: `store_assets/feature_graphic.png` (1024x500px)
+- **ドキュメント**:
+  - `STORE_LISTING_DRAFT.md` (ストア説明文ドラフト)
+  - `STORE_REGISTRATION_MANUAL.md` (作業ガイド)
+
+### 次のステップ
+- ユーザー様による Google Play Console へのアプリ登録、掲載情報の入力、および審査提出。
+- 実機でのスクリーンショット撮影。
+- 公開後のドキュメント最終化。
+
