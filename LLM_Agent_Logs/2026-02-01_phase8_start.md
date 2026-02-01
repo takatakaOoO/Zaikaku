@@ -17,8 +17,10 @@
 - [x] ストア掲載情報ドラフト（`STORE_LISTING_DRAFT.md`）の作成
 - [x] アプリアイコン (512x512px) のリサイズ・生成
 - [x] フィーチャーグラフィック (1024x500px) の新規デザイン・生成
+- [x] エミュレータによるスクリーンショット撮影 (4枚)
 - [x] ストア登録作業マニュアル（`STORE_REGISTRATION_MANUAL.md`）の作成
-- [x] `Task.md`, `Walkthrough.md` の現状同期
+- [x] `implementation_plan.md`, `Task.md`, `Walkthrough.md` の進捗同期公更新
+- [x] GitHubへの進捗同期（コミット・プッシュ）
 
 ## 4. Verification Results
 - **資産の品質確認**: 生成された `icon_512.png` および `feature_graphic.png` がストアの要件（サイズ、内容）を満たしていることを目視確認。
