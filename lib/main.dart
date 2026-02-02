@@ -10,6 +10,7 @@ import 'features/product/presentation/product_list_screen.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 void main() {
+  debugPrint('!!! ZAIKAKU APP STARTING !!!');
   WidgetsFlutterBinding.ensureInitialized();
   MobileAds.instance.initialize();
 

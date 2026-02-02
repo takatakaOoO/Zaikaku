@@ -23,6 +23,9 @@ class ScanState {
   
   /// エラーメッセージ
   final String? errorMessage;
+  
+  /// デバッグ情報（原因切り分け用）
+  final String? debugInfo;
 
   const ScanState({
     this.activeProduct,
@@ -31,6 +34,7 @@ class ScanState {
     this.isScanning = true,
     this.isPendingConfirmation = false,
     this.errorMessage,
+    this.debugInfo,
   });
 
   /// コピーを作成
@@ -41,6 +45,7 @@ class ScanState {
     bool? isScanning,
     bool? isPendingConfirmation,
     String? errorMessage,
+    String? debugInfo,
     bool clearActiveProduct = false,
     bool clearLatestResult = false,
     bool clearErrorMessage = false,
@@ -52,6 +57,7 @@ class ScanState {
       isScanning: isScanning ?? this.isScanning,
       isPendingConfirmation: isPendingConfirmation ?? this.isPendingConfirmation,
       errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
+      debugInfo: debugInfo ?? this.debugInfo,
     );
   }
 }
@@ -62,6 +68,11 @@ class ScanNotifier extends Notifier<ScanState> {
   ScanState build() {
     // 初期状態は製品未選択
     return const ScanState();
+  }
+
+  /// デバッグ情報を設定
+  void setDebugInfo(String info) {
+    state = state.copyWith(debugInfo: info);
   }
 
   /// アクティブ製品を設定（製品マスタから検索して設定）
@@ -187,12 +198,19 @@ class ScanNotifier extends Notifier<ScanState> {
 
   /// エラーを設定
   void setError(String message) {
-    state = state.copyWith(errorMessage: message);
+    state = state.copyWith(
+      errorMessage: message,
+      clearLatestResult: true,
+      isPendingConfirmation: true, // エラー時も確認待ち（ボタン表示）状態にする
+    );
   }
 
   /// エラーをクリア
   void clearError() {
-    state = state.copyWith(clearErrorMessage: true);
+    state = state.copyWith(
+      clearErrorMessage: true,
+      isPendingConfirmation: false, // エラーを閉じたらスキャン可能に戻す
+    );
   }
 }
 

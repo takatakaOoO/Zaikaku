@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 /// バーコードの詳細な検証結果
 class ValidationResult {
   final bool isValid;
@@ -13,13 +15,15 @@ class ValidationResult {
 class BarcodeValidator {
   /// チェックデジットの検証
   static ValidationResult validateCheckDigit(String barcode) {
-    if (barcode.length == 13 && RegExp(r'^[0-9]+$').hasMatch(barcode)) {
-      // JAN-13 (EAN-13) の計算
-      // 偶数桁の和*3 + 奇数桁(13桁目除く)の和
+    debugPrint('[Validator] validateCheckDigit: $barcode');
+    final numericOnly = barcode.replaceAll(RegExp(r'[^0-9]'), '');
+    
+    // JAN-13 (EAN-13)
+    if (numericOnly.length == 13) {
       int evenSum = 0;
       int oddSum = 0;
       for (int i = 0; i < 12; i++) {
-        int digit = int.tryParse(barcode[i]) ?? 0;
+        int digit = int.parse(numericOnly[i]);
         if ((i + 1) % 2 == 0) {
           evenSum += digit;
         } else {
@@ -28,23 +32,70 @@ class BarcodeValidator {
       }
       int total = (evenSum * 3) + oddSum;
       int checkDigit = (10 - (total % 10)) % 10;
-      int actualCheckDigit = int.tryParse(barcode[12]) ?? -1;
+      int actualCheckDigit = int.parse(numericOnly[12]);
+      debugPrint('[Validator] JAN-13 Calc: evenSum(w3)=$evenSum, oddSum(w1)=$oddSum, total=$total, calcCD=$checkDigit, actualCD=$actualCheckDigit');
       
-      if (checkDigit == actualCheckDigit) {
-        return ValidationResult.success();
-      } else {
-        return ValidationResult.failure('バーコードが正常に読み取れない（CDエラー）');
+      if (checkDigit != actualCheckDigit) {
+        return ValidationResult.failure('バーコードが正常に読み取れない（チェックデジットエラー）');
       }
+      return ValidationResult.success();
     }
     
-    // 他の規格（ITFなど）も必要に応じて追加可能
-    return ValidationResult.success(); // 13桁の数値以外、または他の形式はスルー
+    // UPC-A (12 digits)
+    if (numericOnly.length == 12) {
+      // UPC-Aは index 0(Pos12) からウェイト 3, 1, 3, 1... (右から数えると 1, 3, 1, 3...)
+      int weight3Sum = 0;
+      int weight1Sum = 0;
+      for (int i = 0; i < 11; i++) {
+        int digit = int.parse(numericOnly[i]);
+        if (i % 2 == 0) {
+          weight3Sum += digit;
+        } else {
+          weight1Sum += digit;
+        }
+      }
+      int total = (weight3Sum * 3) + weight1Sum;
+      int checkDigit = (10 - (total % 10)) % 10;
+      int actualCheckDigit = int.parse(numericOnly[11]);
+      debugPrint('[Validator] UPC-A Calc: w3Sum=$weight3Sum, w1Sum=$weight1Sum, total=$total, calcCD=$checkDigit, actualCD=$actualCheckDigit');
+      
+      if (checkDigit != actualCheckDigit) {
+        return ValidationResult.failure('バーコードが正常に読み取れない（チェックデジットエラー）');
+      }
+      return ValidationResult.success();
+    }
+    
+    // JAN-8 (EAN-8)
+    if (numericOnly.length == 8) {
+      int weight3Sum = 0;
+      int weight1Sum = 0;
+      for (int i = 0; i < 7; i++) {
+        int digit = int.parse(numericOnly[i]);
+        if (i % 2 == 0) {
+          weight3Sum += digit;
+        } else {
+          weight1Sum += digit;
+        }
+      }
+      int total = (weight3Sum * 3) + weight1Sum;
+      int checkDigit = (10 - (total % 10)) % 10;
+      int actualCheckDigit = int.parse(numericOnly[7]);
+      debugPrint('[Validator] JAN-8 Calc: w3Sum=$weight3Sum, w1Sum=$weight1Sum, total=$total, calcCD=$checkDigit, actualCD=$actualCheckDigit');
+      
+      if (checkDigit != actualCheckDigit) {
+        return ValidationResult.failure('バーコードが正常に読み取れない（チェックデジットエラー）');
+      }
+      return ValidationResult.success();
+    }
+    
+    return ValidationResult.success();
   }
 
   /// パリティチェック (簡易実装: 文字列長や特定の数値パターンなど)
+  /// パリティチェック (簡易実装: 文字列長や特定の数値パターンなど)
   static ValidationResult validateParity(String barcode) {
-    // デモ用: 'PARITY-ERROR' を含む場合はエラー
-    if (barcode.contains('PARITY-ERROR')) {
+    // デモ用: 'P-ERR' を含む場合はエラー
+    if (barcode.toUpperCase().contains('P-ERR')) {
       return ValidationResult.failure('バーコードが正常に読み取れない（パリティエラー）');
     }
     return ValidationResult.success();
@@ -56,13 +107,16 @@ class BarcodeValidator {
     String? expectedStart,
     String? expectedStop,
   }) {
+    debugPrint('[Validator] validateStartStopCharacters: $barcode');
+    final upperBarcode = barcode.toUpperCase();
+    
     // デモ用: 
-    // ケース8: 'MISSING-START' -> スタート文字なし
-    // ケース9: 'MISSING-STOP' -> ストップ文字なし
-    // ケース10: 'MISSING-BOTH' -> 両方なし
-    if (barcode.startsWith('MISSING-START')) return ValidationResult.failure('バーコードが正常に読み取れない（スタート文字欠落）');
-    if (barcode.endsWith('MISSING-STOP')) return ValidationResult.failure('バーコードが正常に読み取れない（ストップ文字欠落）');
-    if (barcode.contains('MISSING-BOTH')) return ValidationResult.failure('バーコードが正常に読み取れない（スタート/ストップ文字欠落）');
+    // ケース8: 'NO-START' -> スタート文字なし
+    // ケース9: 'NO-STOP' -> ストップ文字なし
+    // ケース10: 'NO-BOTH' -> 両方なし
+    if (upperBarcode.startsWith('NO-START')) return ValidationResult.failure('バーコードが正常に読み取れない（スタート文字欠落）');
+    if (upperBarcode.endsWith('NO-STOP')) return ValidationResult.failure('バーコードが正常に読み取れない（ストップ文字欠落）');
+    if (upperBarcode.contains('NO-BOTH')) return ValidationResult.failure('バーコードが正常に読み取れない（スタート/ストップ文字欠落）');
 
     if (expectedStart != null && !barcode.startsWith(expectedStart)) {
       return ValidationResult.failure('スタートキャラクタが不足しています (期待: $expectedStart)');

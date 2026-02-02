@@ -93,16 +93,7 @@ flutter:
   assets:
     - assets/sounds/default/correct.mp3
     - assets/sounds/default/incorrect.mp3
-    - lib/features/scan/presentation/assets/demo_1.png
-    - lib/features/scan/presentation/assets/demo_2.png
-    - lib/features/scan/presentation/assets/demo_3.png
-    - lib/features/scan/presentation/assets/demo_4.png
-    - lib/features/scan/presentation/assets/demo_5.png
-    - lib/features/scan/presentation/assets/demo_6.png
-    - lib/features/scan/presentation/assets/demo_7.png
-    - lib/features/scan/presentation/assets/demo_8.png
-    - lib/features/scan/presentation/assets/demo_9.png
-    - lib/features/scan/presentation/assets/demo_10.png
+
     - assets/icon/icon.png
 
   # An image asset can refer to one or more resolution-specific "variants", see

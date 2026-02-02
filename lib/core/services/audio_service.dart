@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 /// 音声テーマの定義
@@ -50,7 +51,7 @@ class AudioService {
       await _correctPlayer.play(AssetSource(_correctSoundPath));
     } catch (e) {
       // 音声再生エラーは致命的ではないため、ログのみ
-      print('正解音の再生に失敗: $e');
+      debugPrint('正解音の再生に失敗: $e');
     }
   }
   
@@ -61,7 +62,7 @@ class AudioService {
       await _incorrectPlayer.play(AssetSource(_incorrectSoundPath));
     } catch (e) {
       // 音声再生エラーは致命的ではないため、ログのみ
-      print('不正解音の再生に失敗: $e');
+      debugPrint('不正解音の再生に失敗: $e');
     }
   }
   

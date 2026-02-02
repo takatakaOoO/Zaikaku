@@ -30,16 +30,35 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
   @override
   void initState() {
     super.initState();
-    _initController();
+    _reinitializeController();
+    _setupSettingsListener();
   }
 
-  void _initController() {
-    final settings = ref.read(scanSettingsProvider);
-    _scannerController = MobileScannerController(
-      formats: _getFormats(settings.typeFilter),
-      detectionSpeed: DetectionSpeed.normal,
-      facing: CameraFacing.back,
-    );
+  // ステッタスの変更を監視してコントローラーを制御する
+  // build 内からではなく、初回に一度だけ登録する
+  void _setupSettingsListener() {
+    ref.listenManual(scanSettingsProvider, (previous, next) {
+      if (previous?.typeFilter != next.typeFilter) {
+        // フィルタが変わったらコントローラーを再作成（カメラ再起動）
+        setState(() {
+          _scannerController.dispose();
+          _reinitializeController();
+          _scanWindow = null;
+        });
+      }
+      
+      // スキャン範囲モードが変更された際、明示的にスキャン窓をリセット/更新する
+      if (previous?.rangeMode != next.rangeMode) {
+        if (next.rangeMode == ScanRangeMode.singleNarrow) {
+          _scanWindow = _calculateScanWindow(context);
+          _scannerController.updateScanWindow(_scanWindow);
+        } else {
+          _scanWindow = null;
+          _scannerController.updateScanWindow(null);
+        }
+        setState(() {});
+      }
+    });
   }
 
   List<BarcodeFormat> _getFormats(BarcodeTypeFilter filter) {
@@ -68,18 +87,14 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
     }
   }
 
-  // スキャン設定が変更された場合にコントローラーを再起動する仕組み
-  void _listenSettings() {
-    ref.listen(scanSettingsProvider, (previous, next) {
-      if (previous?.typeFilter != next.typeFilter) {
-        // フィルタが変わったらコントローラーを再作成（カメラ再起動）
-        setState(() {
-          _scannerController.dispose();
-          _initController();
-          _scanWindow = null; // リセット
-        });
-      }
-    });
+  void _reinitializeController() {
+    final settings = ref.read(scanSettingsProvider);
+    _scannerController = MobileScannerController(
+      formats: _getFormats(settings.typeFilter),
+      detectionSpeed: DetectionSpeed.normal,
+      facing: CameraFacing.back,
+      autoStart: true, // 確実に開始
+    );
   }
 
   bool _isScanTriggered = false;
@@ -130,16 +145,10 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
   }
 
   void _onBarcodeDetected(BarcodeCapture capture) {
-    if (!_isScanTriggered) return;
-    
     final scanState = ref.read(scanStateProvider);
+    
+    if (!_isScanTriggered) return;
     if (scanState.isPendingConfirmation) return;
-
-    if (scanState.activeProduct == null) {
-      ref.read(scanStateProvider.notifier).setError('製品を選択してください');
-      setState(() => _isScanTriggered = false);
-      return;
-    }
 
     final barcodes = capture.barcodes;
     if (barcodes.isEmpty) return;
@@ -151,12 +160,18 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
     for (final barcodeObj in barcodes) {
       final barcode = barcodeObj.rawValue;
       if (barcode == null) continue;
+      
+
 
       // 1. 1D/2D フィルタリング
       if (settings.typeFilter == BarcodeTypeFilter.only1D) {
-        if (_is2DCode(barcodeObj.format)) continue;
+        if (_is2DCode(barcodeObj.format)) {
+           continue;
+        }
       } else if (settings.typeFilter == BarcodeTypeFilter.only2D) {
-        if (!_is2DCode(barcodeObj.format)) continue;
+        if (!_is2DCode(barcodeObj.format)) {
+           continue;
+        }
       }
 
       // 2. バリデーション実行
@@ -168,13 +183,13 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
         if (!result.isValid) validationError = result;
       }
 
-      // パリティチェック (エラーがなければ次へ)
+      // パリティチェック
       if (validationError == null && settings.enableParityCheck) {
         final result = BarcodeValidator.validateParity(barcode);
         if (!result.isValid) validationError = result;
       }
 
-      // スタート/ストップキャラクタ (エラーがなければ次へ)
+      // スタート/ストップキャラクタ
       if (validationError == null && settings.enableStartStopCheck) {
         final result = BarcodeValidator.validateStartStopCharacters(barcode);
         if (!result.isValid) validationError = result;
@@ -185,21 +200,27 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
         setState(() => _isScanTriggered = false);
         scanNotifier.setError(validationError.errorMessage ?? 'バーコードが正常に読み取れない（エラー）');
         audioService.playIncorrectSound();
-        return; // このフレームの処理を終了
+        return; 
       }
 
       // 3. 正常系・照合処理
+      if (scanState.activeProduct == null) {
+        scanNotifier.setError('製品を選択してください');
+        setState(() => _isScanTriggered = false);
+        return;
+      }
+      
       setState(() => _isScanTriggered = false);
       scanNotifier.clearError();
 
       final result = scanNotifier.verifyBarcode(barcode);
-      
+
       if (result.isCorrect) {
         audioService.playCorrectSound();
       } else {
         audioService.playIncorrectSound();
       }
-      return; // 最初の有効なコードで完了
+      return; 
     }
   }
 
@@ -265,23 +286,10 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
     }
   }
 
-  Future<void> _pickAndScanImage() async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery);
-    if (image == null) return;
-    setState(() => _isScanTriggered = true);
-    final result = await _scannerController.analyzeImage(image.path);
-    if (result != null && result.barcodes.isNotEmpty) {
-      _onBarcodeDetected(BarcodeCapture(barcodes: result.barcodes));
-    } else {
-      setState(() => _isScanTriggered = false);
-      ref.read(scanStateProvider.notifier).setError('画像からバーコードを検出できませんでした');
-    }
-  }
+
 
   @override
   Widget build(BuildContext context) {
-    _listenSettings();
     final scanState = ref.watch(scanStateProvider);
     final settings = ref.watch(scanSettingsProvider);
     
@@ -330,7 +338,13 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => context.pop(),
+                      onPressed: () {
+                        if (context.canPop()) {
+                          context.pop();
+                        } else {
+                          context.go('/');
+                        }
+                      },
                       style: IconButton.styleFrom(backgroundColor: Colors.black45),
                     ),
                     const SizedBox(width: 8),
@@ -363,15 +377,11 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     IconButton(
                       icon: const Icon(Icons.settings, color: Colors.white),
                       onPressed: () => context.push('/settings'),
                        style: IconButton.styleFrom(backgroundColor: Colors.black45),
-                    ),
-                    GestureDetector(
-                      onLongPress: _toggleDemo,
-                      onDoubleTap: _pickAndScanImage,
-                      child: Container(width: 40, height: 40, color: Colors.transparent),
                     ),
                   ],
                 ),
@@ -592,7 +602,7 @@ class _ScanScreenState extends ConsumerState<ScanScreen> {
               shrinkWrap: true,
               padding: EdgeInsets.zero,
               itemCount: materials.length,
-              separatorBuilder: (_, __) => const Divider(color: Colors.white10, height: 1),
+              separatorBuilder: (context, index) => const Divider(color: Colors.white10, height: 1),
               itemBuilder: (context, index) {
                 final code = materials[index];
                 final isDone = state.scanHistory.any(
